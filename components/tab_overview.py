@@ -1,0 +1,85 @@
+import streamlit as st
+import pandas as pd
+import plotly.express as px
+from analytics import deep_sentiment_analysis, topic_modeling, source_network_analysis
+
+def show():
+    st.header("📊 Overview")
+    
+    if 'df' not in st.session_state or st.session_state.df is None:
+        st.warning("Silakan upload data terlebih dahulu di tab 'Upload & Eksplorasi Data'")
+        return
+        
+    df = st.session_state.df.copy()
+    
+    # Statistik umum
+    st.subheader("Statistik Umum")
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Total Berita", len(df))
+    col2.metric("Sumber Berita", df['source'].nunique())
+    col3.metric("Rentang Tanggal", 
+                f"{df['date'].min().strftime('%d %b %Y')} - {df['date'].max().strftime('%d %b %Y')}")
+    
+    # Tren temporal
+    st.subheader("Tren Jumlah Berita per Hari")
+    df['date_only'] = df['date'].dt.date
+    daily_counts = df.groupby('date_only').size().reset_index(name='count')
+    fig = px.line(daily_counts, x='date_only', y='count', 
+                  title='Tren Jumlah Berita Harian',
+                  labels={'date_only': 'Tanggal', 'count': 'Jumlah Berita'})
+    st.plotly_chart(fig, use_container_width=True)
+    
+    # Distribusi sentimen
+    st.subheader("Distribusi Sentimen")
+    sentiment_counts = df['sentiment'].value_counts().reset_index()
+    sentiment_counts.columns = ['sentiment', 'count']
+    fig2 = px.pie(sentiment_counts, names='sentiment', values='count', 
+                  title='Proporsi Sentimen Berita',
+                  hole=0.3)
+    st.plotly_chart(fig2, use_container_width=True)
+    
+    # Top sumber berita
+    st.subheader("Top 10 Sumber Berita")
+    top_sources = df['source'].value_counts().head(10).reset_index()
+    fig3 = px.bar(top_sources, x='source', y='count', 
+                 title='Sumber Berita Terbanyak',
+                 labels={'source': 'Sumber Berita', 'count': 'Jumlah Berita'},
+                 color='count')
+    st.plotly_chart(fig3, use_container_width=True)
+    
+    st.divider()  # <-- INI YANG DIPERBAIKI (sekarang 4 spasi)
+    st.subheader("Analisis Lanjutan")
+    
+    tab1, tab2, tab3 = st.tabs([
+        "Analisis Sentimen Mendalam", 
+        "Topic Modeling", 
+        "Jaringan Sumber"
+    ])
+    
+    with tab1:
+        st.write("Analisis sentimen lebih detail berdasarkan konten berita")
+        if st.button("Analisis Sentimen", key="deep_sentiment"):
+            with st.spinner("Menganalisis sentimen..."):
+                df_analyzed = deep_sentiment_analysis(st.session_state.df)
+                st.session_state.df = df_analyzed
+                st.success("Analisis sentimen selesai!")
+                
+                st.subheader("Distribusi Sentimen Baru")
+                sentiment_counts = df_analyzed['sentiment_category'].value_counts()
+                st.bar_chart(sentiment_counts)
+    
+    with tab2:
+        st.write("Identifikasi topik utama dalam berita")
+        n_topics = st.slider("Jumlah Topik", 3, 10, 5)
+        if st.button("Analisis Topik", key="topic_modeling"):
+            with st.spinner("Melakukan topic modeling..."):
+                topics_df = topic_modeling(st.session_state.df, n_topics=n_topics)
+                st.subheader("Topik Utama")
+                st.dataframe(topics_df)
+    
+    with tab3:
+        st.write("Analisis hubungan antar sumber berita")
+        if st.button("Analisis Jaringan", key="network_analysis"):
+            with st.spinner("Membuat jaringan sumber..."):
+                plt = source_network_analysis(st.session_state.df)
+                st.pyplot(plt)
