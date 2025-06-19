@@ -7,5 +7,5 @@ __pycache__/
 .DS_Store
 .env.old
 *.log
-data/  # jika tidak ingin menyertakan data sample
-docker-compose.yml  # jika ada informasi sensitif
+data/  
+docker-compose.yml  
