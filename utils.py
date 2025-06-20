@@ -8,6 +8,16 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# Define COLUMN_MAPPING as a constant
+COLUMN_MAPPING = {
+    'tanggal': 'date',
+    'judul': 'title',
+    'sentimen': 'sentiment',
+    'sumber': 'source',
+    'isi': 'content',
+    'kategori': 'category'
+}
+
 def create_metric_card(title, value, icon, color):
     """Create modern metric card with hover effect"""
     return f"""
@@ -32,15 +42,8 @@ def create_metric_card(title, value, icon, color):
 
 def validate_and_clean_data(df):
     """Validate and clean the news data"""
-    # Column mapping
-    column_mapping = {
-        'tanggal': 'date',
-        'judul': 'title',
-        'sentimen': 'sentiment',
-        'sumber': 'source',
-        'isi': 'content',
-        'kategori': 'category'
-    }
+    # Use the defined COLUMN_MAPPING
+    column_mapping = COLUMN_MAPPING
     
     # Rename columns
     df.columns = [col.strip().lower() for col in df.columns]
@@ -132,6 +135,7 @@ def process_upload(uploaded_file):
         
         # Auto rename columns
         df.columns = [col.strip().lower() for col in df.columns]
+        # Use the defined COLUMN_MAPPING
         df.rename(columns=lambda x: COLUMN_MAPPING.get(x, x), inplace=True)
         
         # Validasi kolom wajib
