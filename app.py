@@ -1,3 +1,6 @@
+import sys, os
+print("WORKDIR:", os.getcwd())
+print("PYTHONPATH:", sys.path)
 from components.tab_about import tab_about
 from components.tab_overview import tab_overview
 from components.tab_upload import tab_upload
