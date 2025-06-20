@@ -2,18 +2,17 @@ import streamlit as st
 from dotenv import load_dotenv
 from auth import login_user, register_user, init_db as init_auth_db
 from database import init_db as init_app_db
-from components import (
-    tab_overview,
-    tab_upload,
-    tab_ai_lab,
-    tab_forecasting,
-    tab_insights,
-    tab_about
-)
 import logging
 import os
 import sys
 from contextlib import contextmanager
+
+# Impor fungsi show dari masing-masing tab
+from components.tab_overview import show as show_overview
+from components.tab_upload import show as show_upload
+from components.tab_ai_lab import show as show_ai_lab
+from components.tab_insights import show as show_insights
+from components.tab_about import show as show_about
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -376,8 +375,8 @@ else:
     
     # Display tab content with global error handling
     with st_exception_handler():
-        tab_overview.show(tabs[0])
-        tab_upload.show(tabs[1])
-        tab_ai_lab.show(tabs[2])
-        tab_insights.show(tabs[3])
-        tab_about.show(tabs[4])
+        show_overview(tabs[0])
+        show_upload(tabs[1])
+        show_ai_lab(tabs[2])
+        show_insights(tabs[3])
+        show_about(tabs[4])
