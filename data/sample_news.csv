@@ -1,11 +1,11 @@
-date,title,content,category,sentiment,sentiment_score,count
-2024-06-10,"Pemerintah Luncurkan Program AI Nasional","Pemerintah resmi mengumumkan strategi nasional AI...","Teknologi","positif",0.87,12
-2024-06-10,"Harga Minyak Naik Imbas Konflik Regional","Harga minyak dunia naik tajam setelah...","Ekonomi","negatif",-0.61,5
-2024-06-11,"Startup Lokal Raih Pendanaan Baru","Startup fintech asal Jakarta mengamankan investasi...","Bisnis","positif",0.76,8
-2024-06-11,"Cuaca Ekstrem Picu Banjir di Ibu Kota","Hujan deras selama 3 hari mengakibatkan banjir...","Lingkungan","negatif",-0.72,10
-2024-06-12,"Timnas U-23 Melaju ke Final","Tim sepak bola Indonesia berhasil mengalahkan...","Olahraga","positif",0.69,15
-2024-06-12,"Kasus Kejahatan Siber Meningkat","Laporan polisi menunjukkan lonjakan kejahatan siber...","Teknologi","negatif",-0.55,7
-2024-06-13,"Festival Kuliner Nusantara Dibuka","Festival makanan khas daerah berlangsung meriah...","Hiburan","positif",0.92,13
-2024-06-13,"Demo Mahasiswa Tuntut Reformasi","Ratusan mahasiswa turun ke jalan...","Politik","netral",0.02,11
-2024-06-14,"Inflasi Melemahkan Daya Beli Masyarakat","Ekonom memperingatkan efek inflasi terhadap...","Ekonomi","negatif",-0.64,9
-2024-06-14,"Perkembangan AI Disorot Global","AI buatan Indonesia diakui internasional...","Teknologi","positif",0.82,10
+date,title,content,category,sentiment,sentiment_score,count,source
+2024-06-10,"Pemerintah Luncurkan Program AI Nasional","Pemerintah resmi mengumumkan strategi nasional AI...","Teknologi","positif",0.87,12,"detik.com"
+2024-06-10,"Harga Minyak Naik Imbas Konflik Regional","Harga minyak dunia naik tajam setelah...","Ekonomi","negatif",-0.61,5,"cnnindonesia.com"
+2024-06-11,"Startup Lokal Raih Pendanaan Baru","Startup fintech asal Jakarta mengamankan investasi...","Bisnis","positif",0.76,8,"kompas.com"
+2024-06-11,"Cuaca Ekstrem Picu Banjir di Ibu Kota","Hujan deras selama 3 hari mengakibatkan banjir...","Lingkungan","negatif",-0.72,10,"tempo.co"
+2024-06-12,"Timnas U-23 Melaju ke Final","Tim sepak bola Indonesia berhasil mengalahkan...","Olahraga","positif",0.69,15,"bola.com"
+2024-06-12,"Kasus Kejahatan Siber Meningkat","Laporan polisi menunjukkan lonjakan kejahatan siber...","Teknologi","negatif",-0.55,7,"detik.com"
+2024-06-13,"Festival Kuliner Nusantara Dibuka","Festival makanan khas daerah berlangsung meriah...","Hiburan","positif",0.92,13,"tribunnews.com"
+2024-06-13,"Demo Mahasiswa Tuntut Reformasi","Ratusan mahasiswa turun ke jalan...","Politik","netral",0.02,11,"kompas.com"
+2024-06-14,"Inflasi Melemahkan Daya Beli Masyarakat","Ekonom memperingatkan efek inflasi terhadap...","Ekonomi","negatif",-0.64,9,"cnnindonesia.com"
+2024-06-14,"Perkembangan AI Disorot Global","AI buatan Indonesia diakui internasional...","Teknologi","positif",0.82,10,"detik.com"
