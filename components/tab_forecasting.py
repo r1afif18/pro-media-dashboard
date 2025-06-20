@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from gemini_engine import gemini_engine
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 import logging
@@ -87,8 +87,21 @@ def show(tab):
                             st.error("❌ Minimal 7 hari data diperlukan untuk membuat proyeksi")
                             return
                             
-                        # Ambil data terbaru
+                        # Ambil data terbaru dan pastikan formatnya benar
                         last_date = daily_counts['date_only'].iloc[-1]
+                        
+                        # Konversi ke datetime.date jika diperlukan
+                        if not isinstance(last_date, date):
+                            try:
+                                # Jika ini pandas Timestamp atau numpy datetime
+                                last_date = last_date.date()
+                            except AttributeError:
+                                # Jika ini string, konversi ke date
+                                try:
+                                    last_date = datetime.strptime(str(last_date), '%Y-%m-%d').date()
+                                except:
+                                    st.error("❌ Format tanggal tidak valid")
+                                    return
                         
                         if model_type == "Holt-Winters":
                             # Model statistik Holt-Winters
@@ -103,7 +116,6 @@ def show(tab):
                             # Simple moving average
                             forecast = [daily_counts['count'].tail(7).mean()] * forecast_days
                         
-                        # PERBAIKAN DI SINI: Pastikan last_date adalah datetime.date
                         # Generate future dates
                         future_dates = [last_date + timedelta(days=i) for i in range(1, forecast_days + 1)]
                         
@@ -141,26 +153,29 @@ def show(tab):
                         
                         # Confidence interval (untuk Holt-Winters)
                         if model_type == "Holt-Winters":
-                            conf_int = model.prediction_intervals(forecast_days)
-                            fig_projection.add_traces([
-                                go.Scatter(
-                                    x=future_dates,
-                                    y=conf_int[:, 0],
-                                    mode='lines',
-                                    line=dict(width=0),
-                                    showlegend=False,
-                                    name='CI Bawah'
-                                ),
-                                go.Scatter(
-                                    x=future_dates,
-                                    y=conf_int[:, 1],
-                                    mode='lines',
-                                    line=dict(width=0),
-                                    fill='tonexty',
-                                    fillcolor='rgba(255, 126, 14, 0.2)',
-                                    name='95% CI'
-                                )
-                            ])
+                            try:
+                                conf_int = model.prediction_intervals(forecast_days)
+                                fig_projection.add_traces([
+                                    go.Scatter(
+                                        x=future_dates,
+                                        y=conf_int[:, 0],
+                                        mode='lines',
+                                        line=dict(width=0),
+                                        showlegend=False,
+                                        name='CI Bawah'
+                                    ),
+                                    go.Scatter(
+                                        x=future_dates,
+                                        y=conf_int[:, 1],
+                                        mode='lines',
+                                        line=dict(width=0),
+                                        fill='tonexty',
+                                        fillcolor='rgba(255, 126, 14, 0.2)',
+                                        name='95% CI'
+                                    )
+                                ])
+                            except Exception as e:
+                                logger.warning(f"Tidak bisa menambahkan confidence interval: {str(e)}")
                         
                         fig_projection.update_layout(
                             xaxis=dict(tickangle=45),
