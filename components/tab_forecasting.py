@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
+from datetime import datetime, timedelta
 
 def show(tab):
     with tab:
@@ -21,12 +22,14 @@ def show(tab):
             return
             
         try:
-            # Konversi tanggal dan buat data harian (tanpa operasi timestamp kompleks)
+            # Konversi tanggal dan buat data harian
             df['date'] = pd.to_datetime(df['date'], errors='coerce')
             df = df.dropna(subset=['date'])
             
-            # Ekstrak tanggal saja sebagai string (YYYY-MM-DD)
+            # Buat kolom tanggal string untuk menghindari operasi datetime
             df['date_str'] = df['date'].dt.strftime('%Y-%m-%d')
+            
+            # Hitung jumlah berita per hari
             daily_counts = df.groupby('date_str').size().reset_index(name='count')
             daily_counts = daily_counts.sort_values('date_str')
             
@@ -37,7 +40,7 @@ def show(tab):
             # Analisis tren sederhana
             st.subheader("📈 Analisis Tren")
             
-            # Hitung moving average 7 hari (tanpa operasi tanggal)
+            # Hitung moving average 7 hari
             daily_counts['7_day_avg'] = daily_counts['count'].rolling(window=7, min_periods=1).mean()
             
             # Visualisasi tren
@@ -64,14 +67,14 @@ def show(tab):
             if st.button("Buat Proyeksi", use_container_width=True):
                 with st.spinner("Membuat proyeksi tren..."):
                     try:
-                        # Ambil data terbaru (tanpa operasi timestamp)
+                        # Ambil data terbaru
                         last_7_days = daily_counts.tail(7)
                         avg_last_7_days = last_7_days['count'].mean()
                         
-                        # Buat tanggal prediksi sebagai string
-                        last_date = pd.to_datetime(daily_counts['date_str'].iloc[-1])
+                        # Buat tanggal prediksi hanya sebagai string
+                        last_date = datetime.strptime(daily_counts['date_str'].iloc[-1], '%Y-%m-%d')
                         future_dates = [
-                            (last_date + pd.DateOffset(days=i)).strftime('%Y-%m-%d') 
+                            (last_date + timedelta(days=i)).strftime('%Y-%m-%d') 
                             for i in range(1, forecast_days+1)
                         ]
                         
@@ -153,13 +156,13 @@ def show(tab):
                     except Exception as e:
                         st.error(f"Terjadi kesalahan dalam membuat proyeksi: {str(e)}")
             
-            # Analisis pola harian (tanpa operasi timestamp)
+            # Analisis pola harian
             st.subheader("📊 Analisis Pola")
             
             if len(daily_counts) > 0:
                 # Gunakan kolom tanggal asli untuk analisis pola
-                daily_counts['date'] = pd.to_datetime(daily_counts['date_str'])
-                daily_counts['day_of_week'] = daily_counts['date'].dt.day_name()
+                daily_counts['date_dt'] = pd.to_datetime(daily_counts['date_str'])
+                daily_counts['day_of_week'] = daily_counts['date_dt'].dt.day_name()
                 
                 weekday_avg = daily_counts.groupby('day_of_week')['count'].mean().reset_index()
                 
@@ -186,7 +189,7 @@ def show(tab):
             1. **Fokus pada hari aktif**: Tingkatkan produksi konten di hari Senin-Jumat
             2. **Analisis akhir pekan**: Pantau perbedaan pola berita di hari Sabtu/Minggu
             3. **Siapkan konten cadangan**: Untuk hari dengan aktivitas tinggi
-            4. **Bandkan dengan periode sebelumnya**: Lihat pola minggu ke minggu
+            4. **Bandingkan dengan periode sebelumnya**: Lihat pola minggu ke minggu
             """)
             
         except Exception as e:
