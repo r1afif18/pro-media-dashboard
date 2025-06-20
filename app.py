@@ -90,7 +90,7 @@ else:
     tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
         "Overview", "Upload Data", "AI Lab", "Forecasting", "Insights", "About"
     ])
-    tab_overview(tab1)
+    tab_overview()
     tab_upload(tab2)
     tab_ai_lab(tab3)
     tab_forecasting(tab4)
