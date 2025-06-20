@@ -6,7 +6,10 @@ def init_db():
     conn = sqlite3.connect('users.db')
     c = conn.cursor()
     
-    # Jangan hapus tabel users setiap inisialisasi!
+    # JANGAN HAPUS TABEL USERS!
+    # c.execute("DROP TABLE IF EXISTS users")
+    
+    # Buat tabel baru jika belum ada
     c.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
