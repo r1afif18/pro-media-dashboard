@@ -67,25 +67,43 @@ st.markdown("""
 st.markdown('<h1 class="header-title">📊 ProMedia Insight Hub</h1>', unsafe_allow_html=True)
 st.caption("Dashboard Analisis Media Berbasis AI - Eksplorasi, Insight, dan Visualisasi Data Berita")
 
-# Sidebar login
+# Sidebar login & register
 with st.sidebar:
     if not st.session_state.authentication_status:
-        st.subheader("Login")
-        username = st.text_input("Username")
-        password = st.text_input("Password", type="password")
-        
-        if st.button("Login"):
-            if username and password:
-                authenticated, role = authenticate_user(username, password)
-                if authenticated:
-                    st.session_state.authentication_status = True
-                    st.session_state.username = username
-                    st.session_state.role = role
-                    st.rerun()
+        menu = st.radio("Menu", ["Login", "Daftar Pengguna Baru"])
+        if menu == "Login":
+            st.subheader("Login")
+            username = st.text_input("Username", key="login_username")
+            password = st.text_input("Password", type="password", key="login_password")
+            
+            if st.button("Login"):
+                if username and password:
+                    authenticated, role = authenticate_user(username, password)
+                    if authenticated:
+                        st.session_state.authentication_status = True
+                        st.session_state.username = username
+                        st.session_state.role = role
+                        st.rerun()
+                    else:
+                        st.error("Username atau password salah")
                 else:
-                    st.error("Username atau password salah")
-            else:
-                st.warning("Harap isi username dan password")
+                    st.warning("Harap isi username dan password")
+        elif menu == "Daftar Pengguna Baru":
+            st.subheader("Daftar Pengguna Baru")
+            new_username = st.text_input("Username", key="register_username")
+            new_password = st.text_input("Password", type="password", key="register_password")
+            confirm_password = st.text_input("Konfirmasi Password", type="password", key="confirm_password")
+            if st.button("Daftar"):
+                if not new_username or not new_password or not confirm_password:
+                    st.warning("Lengkapi semua kolom.")
+                elif new_password != confirm_password:
+                    st.warning("Password dan konfirmasi password tidak cocok.")
+                else:
+                    success, message = register_user(new_username, new_password)
+                    if success:
+                        st.success("Pendaftaran berhasil! Silakan login.")
+                    else:
+                        st.error(message)
     else:
         st.write(f"Selamat datang, {st.session_state.username}!")
         if st.button("Logout"):
