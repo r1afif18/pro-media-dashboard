@@ -55,6 +55,8 @@ def show(tab):
         - Google Gemini AI
         - SQLite
         - Plotly
+        - Scikit-learn
+        - Statsmodels
         
         ### Tim Pengembang
         
@@ -62,5 +64,5 @@ def show(tab):
         - [Nama Pengembang 2]
         - [Nama Pengembang 3]
         
-        © 2023 ProMedia Insight Hub. Hak Cipta Dilindungi.
+        © 2024 ProMedia Insight Hub. Hak Cipta Dilindungi.
         """)
