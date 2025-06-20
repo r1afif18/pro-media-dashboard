@@ -99,7 +99,7 @@ if not st.session_state.authenticated:
         login_ui()
     st.stop()
 
-# Show dashboard if authenticated
+
 else:
     with st.sidebar:
         st.success(f"Halo, {st.session_state.user}!")
@@ -116,7 +116,7 @@ else:
             st.session_state.update(DEFAULT_STATE)
             st.rerun()
 
-    # Corporate Professional CSS
+    # Corporate Professional CSS - DIPERBARUI
     st.markdown("""
     <style>
     /* Corporate Color Palette */
@@ -137,8 +137,46 @@ else:
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
     
+    /* Mengatur tema dasar menjadi terang */
+    body {
+        background-color: #f9fafc;
+        color: #333;
+    }
+    
     .stApp {
         background-color: #f9fafc;
+    }
+    
+    /* Sidebar Styles - BARU DITAMBAHKAN */
+    [data-testid="stSidebar"] {
+        background-color: #f0f4f9 !important;
+        border-right: 1px solid #dde3e9;
+    }
+    
+    [data-testid="stSidebar"] .stAlert {
+        background-color: #ffffff !important;
+        border-left: 4px solid var(--primary);
+    }
+    
+    [data-testid="stSidebar"] .stButton button {
+        background-color: var(--primary) !important;
+        color: white !important;
+    }
+    
+    [data-testid="stSidebar"] .stButton button:hover {
+        background-color: #142a4e !important;
+    }
+    
+    [data-testid="stSidebar"] .stMarkdown {
+        color: var(--dark);
+    }
+    
+    [data-testid="stSidebar"] .stExpander {
+        background-color: #ffffff !important;
+        border: 1px solid #e6eaf0;
+        border-radius: 8px;
+        padding: 0.5rem;
+        margin-bottom: 1rem;
     }
     
     /* Header */
@@ -361,8 +399,14 @@ else:
         border-radius: 0 4px 4px 0;
         margin: 1rem 0;
     }
+    
+    /* Menyamakan warna teks global */
+    .stMarkdown, .stText, .stAlert, .stSuccess, .stInfo, .stWarning, .stException {
+        color: #333 !important;
+    }
     </style>
     """, unsafe_allow_html=True)
+
 
     # Header aplikasi
     st.markdown('<h1 class="header-title">📊 ProMedia Insight Hub</h1>', unsafe_allow_html=True)
