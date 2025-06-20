@@ -1,165 +1,173 @@
-# forecasting.py
 import streamlit as st
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-from statsmodels.tsa.arima.model import ARIMA
-from sklearn.metrics import mean_squared_error
-import warnings
+import plotly.express as px
 
-# Konfigurasi halaman
-st.set_page_config(page_title="🔮 Forecasting Sentimen Berita", layout="wide")
-st.title("🔮 Forecasting Tren Sentimen Berita")
-
-# Fungsi untuk memproses data
-def process_data(df):
-    # Konversi tipe data
-    df['sentiment_score'] = pd.to_numeric(df['sentiment_score'], errors='coerce')
-    df['count'] = pd.to_numeric(df['count'], errors='coerce')
-    df = df.fillna({'sentiment_score': 0, 'count': 0})
-    
-    # Konversi tanggal
-    df['date'] = pd.to_datetime(df['date'], errors='coerce')
-    df = df.dropna(subset=['date'])
-    
-    # Hitung weighted sentiment
-    df['weighted_sentiment'] = df['sentiment_score'] * df['count']
-    
-    # Agregasi harian
-    daily_df = df.groupby('date').agg({
-        'weighted_sentiment': 'sum',
-        'count': 'sum'
-    }).reset_index()
-    daily_df['avg_sentiment'] = daily_df['weighted_sentiment'] / daily_df['count']
-    
-    return daily_df
-
-# Fungsi forecasting ARIMA
-def arima_forecast(data, steps=7):
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        model = ARIMA(data, order=(1, 1, 1))
-        model_fit = model.fit()
-        forecast = model_fit.forecast(steps=steps)
-    return forecast
-
-# Upload file
-uploaded_file = st.file_uploader("Upload file CSV berita", type="csv")
-
-if uploaded_file is not None:
-    try:
-        # Baca dan proses data
-        df = pd.read_csv(uploaded_file)
-        processed_df = process_data(df)
+def show(tab):
+    with tab:
+        st.header("🔮 Forecasting - Proyeksi Tren Berita")
         
-        # Tampilkan data
-        st.subheader("Data Sentimen Harian")
-        st.dataframe(processed_df, height=300)
-        
-        # Visualisasi tren historis
-        st.subheader("📈 Tren Sentimen Historis")
-        fig, ax = plt.subplots(figsize=(12, 6))
-        ax.plot(processed_df['date'], processed_df['avg_sentiment'], 'b-', label='Aktual')
-        ax.set_title('Rata-Rata Sentimen Harian')
-        ax.set_xlabel('Tanggal')
-        ax.set_ylabel('Skor Sentimen')
-        ax.grid(True)
-        plt.xticks(rotation=45)
-        st.pyplot(fig)
-        
-        # Forecasting
-        st.subheader("🔮 Proyeksi Masa Depan")
-        
-        # Input parameter forecasting
-        col1, col2 = st.columns(2)
-        with col1:
-            forecast_days = st.slider("Jumlah Hari ke Depan", 1, 30, 7)
-        with col2:
-            model_type = st.selectbox("Model Forecasting", ["ARIMA", "Moving Average"])
-        
-        # Lakukan forecasting
-        if model_type == "ARIMA":
-            # Gunakan ARIMA
-            forecast = arima_forecast(processed_df['avg_sentiment'], steps=forecast_days)
-        else:
-            # Moving Average
-            forecast = processed_df['avg_sentiment'].rolling(window=3).mean().iloc[-forecast_days:]
-        
-        # Generate future dates
-        last_date = processed_df['date'].iloc[-1]
-        future_dates = [last_date + timedelta(days=i) for i in range(1, forecast_days+1)]
-        
-        # Plot hasil
-        fig, ax = plt.subplots(figsize=(12, 6))
-        ax.plot(processed_df['date'], processed_df['avg_sentiment'], 'b-', label='Historis')
-        ax.plot(future_dates, forecast, 'r--', label='Proyeksi')
-        ax.set_title(f'Proyeksi Sentimen {forecast_days} Hari ke Depan')
-        ax.set_xlabel('Tanggal')
-        ax.set_ylabel('Skor Sentimen')
-        ax.legend()
-        ax.grid(True)
-        plt.xticks(rotation=45)
-        st.pyplot(fig)
-        
-        # Tampilkan data proyeksi
-        forecast_df = pd.DataFrame({
-            'Tanggal': future_dates,
-            'Proyeksi Skor Sentimen': forecast
-        })
-        st.subheader("Detail Proyeksi")
-        st.dataframe(forecast_df.style.format({
-            'Proyeksi Skor Sentimen': '{:.2f}'
-        }))
-        
-        # Evaluasi model
-        if len(processed_df) > 5:
-            st.subheader("Evaluasi Model")
+        # Cek jika data sudah diupload
+        if 'df' not in st.session_state or st.session_state.df is None:
+            st.warning("Silakan upload data terlebih dahulu di tab 'Upload Data'")
+            return
             
-            # Split data train-test
-            train = processed_df['avg_sentiment'].iloc[:-3]
-            test = processed_df['avg_sentiment'].iloc[-3:]
-            
-            # Training model
-            model = ARIMA(train, order=(1,1,1))
-            model_fit = model.fit()
-            
-            # Forecasting test
-            test_forecast = model_fit.forecast(steps=3)
-            
-            # Hitung RMSE
-            rmse = np.sqrt(mean_squared_error(test, test_forecast))
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                st.metric("RMSE (3 Hari Terakhir)", f"{rmse:.4f}")
-            
-            with col2:
-                st.metric("Akurasi Model", f"{(1 - rmse):.2%}")
-            
-            # Plot evaluasi
-            fig, ax = plt.subplots(figsize=(10, 5))
-            ax.plot(test.index, test, 'bo-', label='Aktual')
-            ax.plot(test.index, test_forecast, 'ro--', label='Prediksi')
-            ax.set_title('Evaluasi Prediksi vs Aktual')
-            ax.set_xlabel('Hari')
-            ax.set_ylabel('Skor Sentimen')
-            ax.legend()
-            ax.grid(True)
-            st.pyplot(fig)
+        df = st.session_state.df.copy()
         
-    except Exception as e:
-        st.error(f"Terjadi kesalahan: {str(e)}")
-        st.error("Pastikan format file sesuai. Kolom wajib: date, sentiment_score, count")
-
-else:
-    st.info("Silakan upload file CSV untuk memulai forecasting")
-    
-    # Tampilkan contoh data
-    st.subheader("Contoh Format Data")
-    example_data = {
-        'date': ['2024-06-10', '2024-06-11', '2024-06-12'],
-        'title': ['Contoh Berita 1', 'Contoh Berita 2', 'Contoh Berita 3'],
-        'sentiment_score': [0.85, -0.62, 0.76],
-        'count': [10, 8, 12]
-    }
-    st.dataframe(pd.DataFrame(example_data))
+        try:
+            # Hitung jumlah berita per hari tanpa operasi datetime
+            date_counts = df['date'].value_counts().reset_index()
+            date_counts.columns = ['date', 'count']
+            date_counts = date_counts.sort_values('date')
+            
+            # Input parameter forecasting
+            st.subheader("⚙️ Parameter Proyeksi")
+            forecast_days = st.slider("Hari ke Depan yang Diproyeksikan", 1, 30, 7)
+            
+            # Analisis tren sederhana
+            st.subheader("📈 Analisis Tren")
+            
+            # Hitung moving average 7 hari
+            date_counts['7_day_avg'] = date_counts['count'].rolling(window=7, min_periods=1).mean()
+            
+            # Visualisasi tren
+            fig_trend = px.line(
+                date_counts,
+                x='date',
+                y=['count', '7_day_avg'],
+                title='Tren Jumlah Berita Harian',
+                labels={'date': 'Tanggal', 'value': 'Jumlah Berita'},
+                color_discrete_map={'count': '#1f77b4', '7_day_avg': '#ff7f0e'}
+            )
+            
+            fig_trend.update_layout(
+                legend_title_text='',
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                xaxis=dict(tickangle=45)
+            )
+            
+            st.plotly_chart(fig_trend, use_container_width=True)
+            
+            # Proyeksi sederhana
+            st.subheader("🔮 Proyeksi Masa Depan")
+            
+            if st.button("Buat Proyeksi", use_container_width=True):
+                with st.spinner("Membuat proyeksi tren..."):
+                    try:
+                        # Ambil data terbaru
+                        last_7_days = date_counts.tail(7)
+                        avg_last_7_days = last_7_days['count'].mean()
+                        
+                        # Buat tanggal prediksi sebagai urutan numerik
+                        last_idx = len(date_counts) - 1
+                        future_idxs = list(range(last_idx + 1, last_idx + forecast_days + 1))
+                        
+                        # Buat proyeksi
+                        projections = [avg_last_7_days] * forecast_days
+                        
+                        # Buat dataframe untuk visualisasi
+                        history_df = date_counts[['date', 'count']].rename(columns={
+                            'date': 'Tanggal',
+                            'count': 'value'
+                        })
+                        history_df['type'] = 'Aktual'
+                        history_df['index'] = range(len(history_df))
+                        
+                        projection_df = pd.DataFrame({
+                            'Tanggal': [f"Proyeksi Hari {i+1}" for i in range(forecast_days)],
+                            'value': projections,
+                            'type': 'Proyeksi',
+                            'index': future_idxs
+                        })
+                        
+                        combined_df = pd.concat([history_df, projection_df])
+                        
+                        # Buat visualisasi
+                        fig_projection = px.line(
+                            combined_df,
+                            x='index',
+                            y='value',
+                            color='type',
+                            title=f'Proyeksi Jumlah Berita {forecast_days} Hari ke Depan',
+                            labels={'index': 'Urutan Hari', 'value': 'Jumlah Berita'},
+                            color_discrete_map={'Aktual': '#1f77b4', 'Proyeksi': '#ff7f0e'}
+                        )
+                        
+                        # Tambahkan garis pembatas
+                        fig_projection.add_vline(
+                            x=last_idx,
+                            line_dash="dash",
+                            line_color="green",
+                            annotation_text="Mulai Proyeksi"
+                        )
+                        
+                        # Tambahkan anotasi
+                        fig_projection.add_annotation(
+                            x=0.05,
+                            y=0.95,
+                            xref="paper",
+                            yref="paper",
+                            text=f"Proyeksi: {int(avg_last_7_days)} berita/hari",
+                            showarrow=False,
+                            bgcolor="white",
+                            bordercolor="black",
+                            borderwidth=1
+                        )
+                        
+                        st.plotly_chart(fig_projection, use_container_width=True)
+                        
+                        # Tampilkan detail proyeksi
+                        st.subheader("Detail Proyeksi")
+                        projection_display = projection_df.copy()
+                        projection_display['value'] = projection_display['value'].round().astype(int)
+                        projection_display = projection_display[['Tanggal', 'value']].rename(columns={
+                            'value': 'Jumlah Berita Proyeksi'
+                        }).reset_index(drop=True)
+                        
+                        st.dataframe(projection_display, use_container_width=True)
+                        
+                        # Interpretasi
+                        st.subheader("Interpretasi Proyeksi")
+                        st.markdown(f"""
+                        Berdasarkan analisis tren sederhana:
+                        - **Rata-rata 7 hari terakhir**: {int(avg_last_7_days)} berita/hari
+                        - **Proyeksi harian**: {int(avg_last_7_days)} berita
+                        - **Total proyeksi {forecast_days} hari**: {int(avg_last_7_days * forecast_days)} berita
+                        
+                        Proyeksi ini didasarkan pada rata-rata jumlah berita dalam 7 hari terakhir. 
+                        """)
+                        
+                    except Exception as e:
+                        st.error(f"Terjadi kesalahan dalam membuat proyeksi: {str(e)}")
+            
+            # Analisis pola
+            st.subheader("📊 Analisis Pola")
+            
+            if len(date_counts) > 0:
+                # Analisis distribusi
+                fig_dist = px.histogram(
+                    date_counts,
+                    x='count',
+                    title='Distribusi Jumlah Berita Harian',
+                    labels={'count': 'Jumlah Berita per Hari'},
+                    nbins=20
+                )
+                st.plotly_chart(fig_dist, use_container_width=True)
+                
+                # Statistik sederhana
+                col1, col2, col3 = st.columns(3)
+                col1.metric("Rata-rata Harian", f"{date_counts['count'].mean():.1f}")
+                col2.metric("Maksimum Harian", date_counts['count'].max())
+                col3.metric("Minimum Harian", date_counts['count'].min())
+            
+            # Rekomendasi strategi
+            st.subheader("💡 Rekomendasi Strategi")
+            st.markdown("""
+            1. **Stabilkan produksi konten** pada level rata-rata harian
+            2. **Siapkan konten cadangan** untuk hari dengan aktivitas tinggi
+            3. **Analisis penyimpangan** pada hari dengan jumlah berita ekstrim
+            4. **Monitor tren mingguan** untuk perencanaan yang lebih baik
+            """)
+            
+        except Exception as e:
+            st.error(f"Terjadi kesalahan dalam memproses data: {str(e)}")
