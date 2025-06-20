@@ -1,13 +1,13 @@
 import streamlit as st
 from dotenv import load_dotenv
-from components import (
-    tab_overview,
-    tab_upload,
-    tab_ai_lab,
-    tab_forecasting,
-    tab_insights,
-    tab_about,
-)
+from components.tab_overview import tab_overview
+from components.tab_upload import tab_upload
+from components.tab_ai_lab import tab_ai_lab
+from components.tab_forecasting import tab_forecasting
+from components.tab_insights import tab_insights
+from components.tab_about import tab_about
+from database import init_db as init_app_db
+
 
 from database import init_db as init_app_db
 
