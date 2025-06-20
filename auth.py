@@ -1,16 +1,12 @@
 import sqlite3
 import hashlib
-import streamlit as st
 
 def init_db():
     """Inisialisasi database user"""
     conn = sqlite3.connect('users.db')
     c = conn.cursor()
     
-    # Perbaikan: Hapus tabel lama jika ada skema berbeda
-    c.execute("DROP TABLE IF EXISTS users")
-    
-    # Buat tabel baru dengan skema yang diperbarui
+    # Jangan hapus tabel users setiap inisialisasi!
     c.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
