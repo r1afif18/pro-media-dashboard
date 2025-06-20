@@ -1,20 +1,20 @@
 import sqlite3
-import logging
 import os
+import logging
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "app_data.db")
 logger = logging.getLogger(__name__)
 
 def init_db():
-    """Inisialisasi database utama untuk aplikasi."""
+    """Initialize the database"""
     with sqlite3.connect(DB_PATH) as conn:
         c = conn.cursor()
         # Table for custom insights
         c.execute("""
             CREATE TABLE IF NOT EXISTS custom_insights (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                title TEXT,
-                content TEXT,
+                title TEXT NOT NULL,
+                content TEXT NOT NULL,
                 tags TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
@@ -23,14 +23,15 @@ def init_db():
         c.execute("""
             CREATE TABLE IF NOT EXISTS ai_history (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                prompt TEXT,
-                response TEXT,
+                prompt TEXT NOT NULL,
+                response TEXT NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
         conn.commit()
 
 def save_custom_insight(title, content, tags):
+    """Save custom insight to database"""
     tag_str = ','.join(tags) if tags else ''
     with sqlite3.connect(DB_PATH) as conn:
         c = conn.cursor()
@@ -41,6 +42,7 @@ def save_custom_insight(title, content, tags):
         conn.commit()
 
 def get_custom_insights():
+    """Get all custom insights"""
     with sqlite3.connect(DB_PATH) as conn:
         c = conn.cursor()
         c.execute("SELECT id, title, content, tags, created_at FROM custom_insights ORDER BY created_at DESC")
@@ -57,13 +59,14 @@ def get_custom_insights():
         return insights
 
 def delete_custom_insight(insight_id):
+    """Delete custom insight"""
     with sqlite3.connect(DB_PATH) as conn:
         c = conn.cursor()
         c.execute("DELETE FROM custom_insights WHERE id=?", (insight_id,))
         conn.commit()
 
 def save_ai_history(prompt, response):
-    """Simpan prompt dan response AI ke database"""
+    """Save AI conversation history"""
     with sqlite3.connect(DB_PATH) as conn:
         c = conn.cursor()
         c.execute(
@@ -73,7 +76,7 @@ def save_ai_history(prompt, response):
         conn.commit()
 
 def get_ai_history(limit=20):
-    """Ambil riwayat AI terbaru (default 20)"""
+    """Get AI conversation history"""
     with sqlite3.connect(DB_PATH) as conn:
         c = conn.cursor()
         c.execute(
@@ -90,3 +93,10 @@ def get_ai_history(limit=20):
                 'created_at': row[3]
             })
         return history
+
+def delete_ai_history(history_id):
+    """Delete AI history"""
+    with sqlite3.connect(DB_PATH) as conn:
+        c = conn.cursor()
+        c.execute("DELETE FROM ai_history WHERE id=?", (history_id,))
+        conn.commit()
