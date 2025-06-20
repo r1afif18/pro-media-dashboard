@@ -134,12 +134,12 @@ else:
     
     # Display tab content
     try:
-        tab_overview.show(tab1)
-        tab_upload.show(tab2)
-        tab_ai_lab.show(tab3)
-        tab_forecasting.show(tab4)
-        tab_insights.show(tab5)
-        tab_about.show(tab6)
+        tab_overview(tab1)
+        tab_upload(tab2)
+        tab_ai_lab(tab3)
+        tab_forecasting(tab4)
+        tab_insights(tab5)
+        tab_about(tab6)
     except Exception as e:
         st.error(f"Terjadi kesalahan: {str(e)}")
         logger.error(f"Error in tab navigation: {str(e)}")
