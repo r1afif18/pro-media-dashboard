@@ -2,240 +2,184 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
-import plotly.graph_objects as go
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta
 from gemini_engine import gemini_engine
-from statsmodels.tsa.holtwinters import ExponentialSmoothing
 import logging
-import utils
 
-# Setup logging
 logger = logging.getLogger(__name__)
 
 def show(tab):
     with tab:
         st.header("🔮 Forecasting & Strategi - Analisis Tren Berita")
+        st.info("Fitur ini membantu memproyeksikan tren berita berdasarkan data historis")
         
-        # Cek jika data sudah diupload
+        # Step 1: Pilih kolom yang akan dianalisis
         if 'df' not in st.session_state or st.session_state.df is None:
             st.warning("📤 Silakan upload data terlebih dahulu di tab 'Upload Data'")
             return
             
         df = st.session_state.df.copy()
         
-        # Pastikan kolom tanggal ada
-        if 'date' not in df.columns:
-            st.error("❌ Data tidak memiliki kolom tanggal ('date') untuk forecasting")
-            return
-            
-        try:
-            # Konversi tanggal
-            df['date'] = pd.to_datetime(df['date'], errors='coerce', format='%Y-%m-%d')
-            invalid_dates = df[df['date'].isna()]
-            
-            if not invalid_dates.empty:
-                st.warning(f"⚠️ Ditemukan {len(invalid_dates)} baris dengan format tanggal tidak valid. Baris ini akan diabaikan.")
-            
-            df = df.dropna(subset=['date'])
-            
-            # Pastikan ada data yang valid
-            if len(df) == 0:
-                st.error("❌ Tidak ada data tanggal yang valid untuk dianalisis")
-                return
-            
-            # Siapkan data harian
-            df['date_only'] = df['date'].dt.date
-            daily_counts = df.groupby('date_only').size().reset_index(name='count')
-            daily_counts = daily_counts.sort_values('date_only')
-            
-            # Input parameter forecasting
-            st.subheader("⚙️ Parameter Proyeksi")
-            col1, col2 = st.columns(2)
-            with col1:
-                forecast_days = st.slider("Hari ke Depan", 1, 90, 14)
-            with col2:
-                model_type = st.selectbox("Model Forecasting", 
-                                         ["Holt-Winters", "Moving Average"], 
-                                         index=0)
-            
-            # Analisis tren real-time
-            st.subheader("📈 Analisis Tren Real-Time")
-            
-            # Hitung moving average
-            daily_counts['7_day_avg'] = daily_counts['count'].rolling(window=7, min_periods=1).mean()
-            
-            # Visualisasi tren
-            fig_trend = px.line(
-                daily_counts,
-                x='date_only',
-                y=['count', '7_day_avg'],
-                title='Tren Jumlah Berita Harian',
-                labels={'date_only': 'Tanggal', 'value': 'Jumlah Berita'},
-                color_discrete_map={'count': '#1f77b4', '7_day_avg': '#ff7f0e'}
-            )
-            fig_trend.update_layout(legend_title_text='', hovermode='x unified')
-            st.plotly_chart(fig_trend, use_container_width=True)
-            
-            # Forecasting section
-            st.subheader("🔮 Proyeksi Masa Depan")
-            
-            if st.button("Buat Proyeksi & Analisis Strategi", key="forecast_btn", use_container_width=True):
-                with st.spinner("Menganalisis tren dan membuat proyeksi..."):
-                    try:
-                        # Pastikan ada cukup data
-                        if len(daily_counts) < 7:
-                            st.error("❌ Minimal 7 hari data diperlukan untuk membuat proyeksi")
-                            return
-                            
-                        # Ambil data terbaru dan pastikan formatnya benar
-                        last_date = daily_counts['date_only'].iloc[-1]
-                        
-                        # Konversi ke datetime.date jika diperlukan
-                        if not isinstance(last_date, date):
-                            try:
-                                # Jika ini pandas Timestamp atau numpy datetime
-                                last_date = last_date.date()
-                            except AttributeError:
-                                # Jika ini string, konversi ke date
-                                try:
-                                    last_date = datetime.strptime(str(last_date), '%Y-%m-%d').date()
-                                except:
-                                    st.error("❌ Format tanggal tidak valid")
-                                    return
-                        
-                        if model_type == "Holt-Winters":
-                            # Model statistik Holt-Winters
-                            model = ExponentialSmoothing(
-                                daily_counts['count'],
-                                seasonal_periods=7,
-                                trend='add',
-                                seasonal='add'
-                            ).fit()
-                            forecast = model.forecast(forecast_days)
-                        else:
-                            # Simple moving average
-                            forecast = [daily_counts['count'].tail(7).mean()] * forecast_days
-                        
-                        # Generate future dates
-                        future_dates = [last_date + timedelta(days=i) for i in range(1, forecast_days + 1)]
-                        
-                        # Buat dataframe untuk visualisasi
-                        history_df = daily_counts.tail(30)[['date_only', 'count']].rename(
-                            columns={'date_only': 'date', 'count': 'value'})
-                        history_df['type'] = 'Aktual'
-                        
-                        projection_df = pd.DataFrame({
-                            'date': future_dates,
-                            'value': forecast,
-                            'type': 'Proyeksi'
-                        })
-                        
-                        combined_df = pd.concat([history_df, projection_df])
-                        
-                        # Buat visualisasi proyeksi
-                        fig_projection = px.line(
-                            combined_df,
-                            x='date',
-                            y='value',
-                            color='type',
-                            title=f'Proyeksi {forecast_days} Hari ke Depan',
-                            labels={'date': 'Tanggal', 'value': 'Jumlah Berita'},
-                            color_discrete_map={'Aktual': '#1f77b4', 'Proyeksi': '#ff7f0e'}
-                        )
-                        
-                        # Tambahkan garis pembatas
-                        fig_projection.add_vline(
-                            x=last_date,
-                            line_dash="dash",
-                            line_color="green",
-                            annotation_text="Mulai Proyeksi"
-                        )
-                        
-                        # Confidence interval (untuk Holt-Winters)
-                        if model_type == "Holt-Winters":
-                            try:
-                                conf_int = model.prediction_intervals(forecast_days)
-                                fig_projection.add_traces([
-                                    go.Scatter(
-                                        x=future_dates,
-                                        y=conf_int[:, 0],
-                                        mode='lines',
-                                        line=dict(width=0),
-                                        showlegend=False,
-                                        name='CI Bawah'
-                                    ),
-                                    go.Scatter(
-                                        x=future_dates,
-                                        y=conf_int[:, 1],
-                                        mode='lines',
-                                        line=dict(width=0),
-                                        fill='tonexty',
-                                        fillcolor='rgba(255, 126, 14, 0.2)',
-                                        name='95% CI'
-                                    )
-                                ])
-                            except Exception as e:
-                                logger.warning(f"Tidak bisa menambahkan confidence interval: {str(e)}")
-                        
-                        fig_projection.update_layout(
-                            xaxis=dict(tickangle=45),
-                            hovermode='x unified'
-                        )
-                        st.plotly_chart(fig_projection, use_container_width=True)
-                        
-                        # Tampilkan detail proyeksi
-                        st.subheader("Detail Proyeksi")
-                        projection_display = projection_df.copy()
-                        
-                        # Pastikan nilai adalah integer
-                        if hasattr(projection_display['value'], 'tolist'):
-                            projection_display['value'] = projection_display['value'].round().astype(int)
-                        else:
-                            projection_display['value'] = [round(v) for v in projection_display['value']]
-                            
-                        projection_display = projection_display.rename(columns={
-                            'date': 'Tanggal',
-                            'value': 'Jumlah Berita Proyeksi'
-                        }).reset_index(drop=True)
-                        
-                        st.dataframe(projection_display, use_container_width=True)
-                        
-                        # Rekomendasi strategi oleh AI
-                        st.subheader("💡 Rekomendasi Strategi oleh AI")
-                        
-                        # Format forecast untuk prompt
-                        if hasattr(forecast, 'tolist'):
-                            forecast_list = forecast.tolist()
-                        else:
-                            forecast_list = forecast
-                        
-                        # Prompt untuk Gemini
-                        prompt = f"""
-                        Berikan rekomendasi strategi manajemen konten berdasarkan:
-                        - Tren historis: {daily_counts.tail(7)['count'].tolist()}
-                        - Proyeksi: {forecast_list}
-                        - Model: {model_type}
-                        
-                        Format:
-                        1. **Optimalisasi Produksi Konten**
-                        - [Analisis & rekomendasi]
-                        
-                        2. **Strategi Distribusi** 
-                        - [Analisis & rekomendasi]
-                        
-                        3. **Persiapan Fluktuasi**
-                        - [Analisis & rekomendasi]
-                        
-                        Gunakan data spesifik dan berikan saran praktis.
-                        """
-                        
-                        recommendation = gemini_engine.ask(prompt, pd.DataFrame())
-                        st.markdown(recommendation)
-                        
-                    except Exception as e:
-                        st.error(f"⚠️ Error forecasting: {str(e)}")
-                        logger.exception("Forecasting error")
+        st.subheader("1. Pilih Data untuk Analisis")
+        col1, col2 = st.columns(2)
         
-        except Exception as e:
-            st.error(f"⚠️ Error pemrosesan: {str(e)}")
-            logger.exception("Data processing error")
+        with col1:
+            # Pilih kolom tanggal
+            date_cols = [col for col in df.columns if 'date' in col.lower()]
+            date_column = st.selectbox("Kolom Tanggal", date_cols if date_cols else df.columns)
+            
+            # Pilih kolom numerik
+            numeric_cols = df.select_dtypes(include=np.number).columns.tolist()
+            metric_column = st.selectbox("Kolom Metrik", numeric_cols if numeric_cols else df.columns)
+            
+        with col2:
+            # Pilih kategori untuk grouping (opsional)
+            category_cols = [''] + [col for col in df.columns if col != date_column and col != metric_column]
+            category_column = st.selectbox("Kelompokkan Berdasarkan (opsional)", category_cols)
+            
+            # Pilih rentang waktu
+            time_window = st.selectbox("Rentang Waktu", ["Harian", "Mingguan", "Bulanan"])
+        
+        st.subheader("2. Parameter Forecasting")
+        col1, col2 = st.columns(2)
+        with col1:
+            forecast_periods = st.slider("Jumlah Periode ke Depan", 1, 30, 7)
+        with col2:
+            method = st.selectbox("Metode Forecasting", 
+                                 ["Rata-rata Bergerak", "Pola Musiman", "Sederhana"])
+        
+        # Tombol analisis
+        if st.button("Buat Proyeksi & Analisis Strategi", use_container_width=True):
+            with st.spinner("Menganalisis data dan membuat proyeksi..."):
+                try:
+                    # Proses data
+                    df_clean = df.copy()
+                    
+                    # Konversi tanggal - lebih toleran
+                    try:
+                        df_clean[date_column] = pd.to_datetime(df_clean[date_column], errors='coerce')
+                        df_clean = df_clean.dropna(subset=[date_column])
+                    except:
+                        st.error("Gagal mengonversi kolom tanggal. Pastikan format tanggal valid.")
+                        return
+                    
+                    # Agregasi data berdasarkan periode
+                    if time_window == "Harian":
+                        df_clean['period'] = df_clean[date_column].dt.date
+                    elif time_window == "Mingguan":
+                        df_clean['period'] = df_clean[date_column].dt.to_period('W').dt.start_time.dt.date
+                    else:  # Bulanan
+                        df_clean['period'] = df_clean[date_column].dt.to_period('M').dt.start_time.dt.date
+                    
+                    # Grouping data
+                    group_cols = ['period']
+                    if category_column:
+                        group_cols.append(category_column)
+                    
+                    df_agg = df_clean.groupby(group_cols)[metric_column].sum().reset_index()
+                    
+                    # Visualisasi data historis
+                    st.subheader("📈 Data Historis")
+                    if category_column:
+                        fig_hist = px.line(
+                            df_agg,
+                            x='period',
+                            y=metric_column,
+                            color=category_column,
+                            title=f'Tren {metric_column}'
+                        )
+                    else:
+                        fig_hist = px.line(
+                            df_agg,
+                            x='period',
+                            y=metric_column,
+                            title=f'Tren {metric_column}'
+                        )
+                    st.plotly_chart(fig_hist, use_container_width=True)
+                    
+                    # Forecasting sederhana
+                    st.subheader("🔮 Proyeksi Masa Depan")
+                    
+                    # Metode rata-rata sederhana
+                    last_value = df_agg[metric_column].iloc[-1]
+                    avg_value = df_agg[metric_column].mean()
+                    
+                    # Buat data proyeksi
+                    last_date = df_agg['period'].iloc[-1]
+                    future_dates = [last_date + timedelta(days=i) for i in range(1, forecast_periods + 1)]
+                    
+                    if method == "Rata-rata Bergerak":
+                        proj_values = [avg_value] * forecast_periods
+                    elif method == "Pola Musiman":
+                        # Contoh sederhana: gunakan nilai terakhir
+                        proj_values = [last_value] * forecast_periods
+                    else:
+                        # Metode sederhana: rata-rata 3 periode terakhir
+                        last_values = df_agg[metric_column].tail(3)
+                        avg_last = last_values.mean()
+                        proj_values = [avg_last] * forecast_periods
+                    
+                    # Buat dataframe proyeksi
+                    proj_df = pd.DataFrame({
+                        'Periode': future_dates,
+                        metric_column: proj_values,
+                        'Tipe': 'Proyeksi'
+                    })
+                    
+                    # Gabungkan dengan data historis untuk visualisasi
+                    hist_df = df_agg[['period', metric_column]].copy()
+                    hist_df['Tipe'] = 'Historis'
+                    hist_df = hist_df.rename(columns={'period': 'Periode'})
+                    
+                    combined_df = pd.concat([hist_df, proj_df])
+                    
+                    # Visualisasi proyeksi
+                    fig_forecast = px.line(
+                        combined_df,
+                        x='Periode',
+                        y=metric_column,
+                        color='Tipe',
+                        title=f'Proyeksi {metric_column}',
+                        color_discrete_map={'Historis': '#1f77b4', 'Proyeksi': '#ff7f0e'}
+                    )
+                    fig_forecast.add_vline(
+                        x=last_date,
+                        line_dash="dash",
+                        line_color="green",
+                        annotation_text="Mulai Proyeksi"
+                    )
+                    st.plotly_chart(fig_forecast, use_container_width=True)
+                    
+                    # Tampilkan tabel proyeksi
+                    st.subheader("Detail Proyeksi")
+                    proj_df = proj_df.rename(columns={'Periode': 'Tanggal', metric_column: 'Nilai Proyeksi'})
+                    st.dataframe(proj_df, use_container_width=True)
+                    
+                    # Rekomendasi strategi oleh AI
+                    st.subheader("💡 Rekomendasi Strategi oleh AI")
+                    
+                    # Siapkan prompt untuk AI
+                    prompt = f"""
+                    Berikan rekomendasi strategi manajemen konten berita berdasarkan proyeksi berikut:
+                    
+                    - Metrik: {metric_column}
+                    - Metode proyeksi: {method}
+                    - Periode proyeksi: {forecast_periods} {time_window}
+                    - Nilai rata-rata historis: {avg_value:.2f}
+                    - Nilai terakhir: {last_value:.2f}
+                    - Proyeksi: {', '.join([str(round(v, 2)) for v in proj_values])}
+                    
+                    Format rekomendasi:
+                    1. **Optimalisasi Produksi Konten**
+                    2. **Strategi Distribusi** 
+                    3. **Persiapan Fluktuasi**
+                    
+                    Berikan saran praktis.
+                    """
+                    
+                    recommendation = gemini_engine.ask(prompt, pd.DataFrame())
+                    st.markdown(recommendation)
+                    
+                except Exception as e:
+                    st.error(f"⚠️ Terjadi kesalahan dalam analisis: {str(e)}")
+                    logger.exception("Forecasting error")
