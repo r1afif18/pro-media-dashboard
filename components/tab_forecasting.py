@@ -103,6 +103,7 @@ def show(tab):
                             # Simple moving average
                             forecast = [daily_counts['count'].tail(7).mean()] * forecast_days
                         
+                        # PERBAIKAN DI SINI: Pastikan last_date adalah datetime.date
                         # Generate future dates
                         future_dates = [last_date + timedelta(days=i) for i in range(1, forecast_days + 1)]
                         
@@ -170,7 +171,13 @@ def show(tab):
                         # Tampilkan detail proyeksi
                         st.subheader("Detail Proyeksi")
                         projection_display = projection_df.copy()
-                        projection_display['value'] = projection_display['value'].round().astype(int)
+                        
+                        # Pastikan nilai adalah integer
+                        if hasattr(projection_display['value'], 'tolist'):
+                            projection_display['value'] = projection_display['value'].round().astype(int)
+                        else:
+                            projection_display['value'] = [round(v) for v in projection_display['value']]
+                            
                         projection_display = projection_display.rename(columns={
                             'date': 'Tanggal',
                             'value': 'Jumlah Berita Proyeksi'
@@ -181,11 +188,17 @@ def show(tab):
                         # Rekomendasi strategi oleh AI
                         st.subheader("💡 Rekomendasi Strategi oleh AI")
                         
+                        # Format forecast untuk prompt
+                        if hasattr(forecast, 'tolist'):
+                            forecast_list = forecast.tolist()
+                        else:
+                            forecast_list = forecast
+                        
                         # Prompt untuk Gemini
                         prompt = f"""
                         Berikan rekomendasi strategi manajemen konten berdasarkan:
                         - Tren historis: {daily_counts.tail(7)['count'].tolist()}
-                        - Proyeksi: {forecast.tolist() if hasattr(forecast, 'tolist') else forecast}
+                        - Proyeksi: {forecast_list}
                         - Model: {model_type}
                         
                         Format:
@@ -206,6 +219,8 @@ def show(tab):
                         
                     except Exception as e:
                         st.error(f"⚠️ Error forecasting: {str(e)}")
+                        logger.exception("Forecasting error")
         
         except Exception as e:
             st.error(f"⚠️ Error pemrosesan: {str(e)}")
+            logger.exception("Data processing error")
