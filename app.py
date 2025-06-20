@@ -1,7 +1,6 @@
 import streamlit as st
 from dotenv import load_dotenv
 from auth import login_user, register_user, init_db
-
 from components import (
     tab_overview,
     tab_upload,
@@ -11,21 +10,19 @@ from components import (
     tab_about
 )
 
-# Load .env jika ada
 load_dotenv()
+init_db()
 
-# Inisialisasi session state
 for k, v in {
     'df': None,
     'ai_history': [],
     'authenticated': False,
     'user': "",
     'role': "",
+    'custom_insights': [],
 }.items():
     if k not in st.session_state:
         st.session_state[k] = v
-
-# ---------- Login & Registration UI ----------
 
 def registration_ui():
     st.subheader("Registrasi Pengguna Baru (oleh admin)")
@@ -59,10 +56,6 @@ def login_ui():
             st.experimental_rerun()
         else:
             st.error("Username atau password salah!")
-
-# ---------- MAIN APP ----------
-
-init_db()
 
 if not st.session_state.authenticated:
     st.info("Silakan login terlebih dahulu.")
