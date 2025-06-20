@@ -1,5 +1,4 @@
 import streamlit as st
-from auth import register_user
 
 def show():
     st.header("📝 Tentang ProMedia Insight Hub")
