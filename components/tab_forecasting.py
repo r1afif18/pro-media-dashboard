@@ -7,6 +7,7 @@ from datetime import timedelta
 def show():
     st.header("🔮 Forecasting")
 
+    # Placeholder info
     st.info("""
     **Fitur dalam Pengembangan**  
     Versi berikutnya akan menyertakan prediksi tren menggunakan:
@@ -15,131 +16,127 @@ def show():
     - Integrasi dengan Gemini untuk prediksi kualitatif
     """)
 
-    if 'df' in st.session_state and st.session_state.df is not None and not st.session_state.df.empty:
-        df = st.session_state.df.copy()
+    # Pastikan data sudah di-upload
+    if 'df' not in st.session_state or st.session_state.df is None:
+        st.warning("📁 Silakan upload data untuk melihat forecasting", icon="⚠️")
+        return
 
-        # ==== PILIHAN KOLUM TANGGAL SECARA OTOMATIS ====
-        date_columns = df.select_dtypes(include=['datetime', 'datetime64[ns]', 'object']).columns.tolist()
-        # Deteksi kolom yg mengandung kata 'date'
-        suggested = [col for col in date_columns if 'date' in col.lower() or 'tanggal' in col.lower()]
-        if suggested:
-            default_col = suggested[0]
-        else:
-            default_col = date_columns[0] if date_columns else None
+    df = st.session_state.df.copy()
 
-        selected_date_column = st.selectbox(
-            "Pilih Kolom Tanggal",
-            options=date_columns,
-            index=date_columns.index(default_col) if default_col else 0
-        ) if date_columns else None
+    # --- 1) Pilih kolom tanggal & filter rentang waktu ---
+    selected_date_column = st.selectbox('Pilih Kolom Tanggal', df.columns)
+    df[selected_date_column] = pd.to_datetime(df[selected_date_column])
+    start_date = st.date_input('Tanggal Mulai', value=df[selected_date_column].min())
+    end_date   = st.date_input('Tanggal Akhir', value=df[selected_date_column].max())
+    mask = (df[selected_date_column] >= pd.to_datetime(start_date)) & (df[selected_date_column] <= pd.to_datetime(end_date))
+    df_range = df.loc[mask]
+    if df_range.empty:
+        st.warning("Rentang tanggal tidak memiliki data")
+        return
 
-        if selected_date_column is None:
-            st.error("Tidak ditemukan kolom bertipe tanggal di dataset Anda.")
-            return
+    # --- 2) Agregasi per hari ---
+    df_range['date_only'] = df_range[selected_date_column].dt.date
+    daily_counts = df_range.groupby('date_only').size().reset_index(name='count')
 
-        # Pastikan kolom bertipe datetime
-        df[selected_date_column] = pd.to_datetime(df[selected_date_column], errors="coerce")
-        if df[selected_date_column].isnull().all():
-            st.error("Semua nilai di kolom tanggal tidak valid. Cek format datanya.")
-            return
+    # --- 3) Pilih metrik numerik ---
+    metric_cols = [
+        col for col in df.columns
+        if col != selected_date_column and pd.api.types.is_numeric_dtype(df[col])
+    ]
+    options = ['Jumlah Data per Hari'] + metric_cols
+    selected_metric = st.selectbox("Pilih Kolom Metrik (opsional)", options, index=0)
 
-        # ==== KONTROL RENTANG WAKTU ====
-        min_date = df[selected_date_column].min().date()
-        max_date = df[selected_date_column].max().date()
+    # --- 4) Pilih model & parameter ---
+    model_type = st.radio('Pilih Model', ['ARIMA', 'Prophet', 'LSTM'])
+    if model_type == 'ARIMA':
+        p = st.slider('Order ARIMA (p)', 0, 10, 1)
+        q = st.slider('Order ARIMA (q)', 0, 10, 1)
+    # (Untuk Prophet / LSTM bisa ditambahkan parameter di sini)
 
-        col1, col2 = st.columns(2)
-        with col1:
-            start_date = st.date_input('Tanggal Mulai', value=min_date, min_value=min_date, max_value=max_date)
-        with col2:
-            end_date = st.date_input('Tanggal Akhir', value=max_date, min_value=min_date, max_value=max_date)
-
-        # Filter data sesuai range
-        df_range = df[(df[selected_date_column].dt.date >= start_date) & (df[selected_date_column].dt.date <= end_date)]
-
-        if df_range.empty:
-            st.warning("Tidak ada data dalam rentang waktu yang dipilih.")
-            return
-
-        # === AGGREGASI DATA (misal: jumlah berita per hari) ===
-        daily_counts = df_range.groupby(df_range[selected_date_column].dt.date).size().reset_index(name='count')
-
-        if not daily_counts.empty:
-            last_date = daily_counts[selected_date_column].max()
-            # Buat rentang tanggal untuk prediksi
+    # --- 5) Horizon prediksi & tombol eksekusi ---
+    periods = st.number_input('Jumlah Hari Prediksi', min_value=1, max_value=30, value=7)
+    if st.button("Jalankan Forecast"):
+        with st.spinner("Memprediksi..."):
+            last_date = daily_counts['date_only'].max()
+            # Dummy prediksi acak (nanti ganti dengan ARIMA/Prophet/LSTM sungguhan)
             future_dates = pd.date_range(
                 start=pd.to_datetime(last_date) + timedelta(days=1),
-                periods=7,
-                freq='D'
+                periods=periods, freq='D'
             ).date.tolist()
+            # Pilih data aktual vs prediksi sesuai metrik
+            if selected_metric == 'Jumlah Data per Hari':
+                actual = daily_counts.copy()
+                actual['type'] = 'Aktual'
+                mean_val = actual['count'].mean()
+                preds = np.random.randint(int(mean_val*0.8), int(mean_val*1.2), size=periods)
+                pred_df = pd.DataFrame({
+                    'date_only': future_dates,
+                    'count': preds,
+                    'type': 'Prediksi'
+                })
+                forecast_df = pd.concat([actual, pred_df], ignore_index=True)
+                y_col = 'count'
+                y_label = 'Jumlah Data'
+            else:
+                agg = df_range.groupby('date_only')[selected_metric]\
+                              .sum().reset_index(name='count')
+                agg['type'] = 'Aktual'
+                mean_val = agg['count'].mean()
+                preds = np.random.randint(int(mean_val*0.8), int(mean_val*1.2), size=periods)
+                pred_df = pd.DataFrame({
+                    'date_only': future_dates,
+                    'count': preds,
+                    'type': 'Prediksi'
+                })
+                forecast_df = pd.concat([agg, pred_df], ignore_index=True)
+                y_col = 'count'
+                y_label = selected_metric
 
-            # Generate random data untuk prediksi (NANTI diganti Prophet)
-            np.random.seed(42)
-            mean_count = daily_counts['count'].mean()
-            predictions = np.random.randint(
-                int(mean_count * 0.8),
-                int(mean_count * 1.2),
-                size=7
-            )
-
-            # Gabungkan data aktual dan prediksi
-            forecast_df = pd.DataFrame({
-                'date_only': daily_counts[selected_date_column].tolist() + future_dates,
-                'count': daily_counts['count'].tolist() + predictions.tolist(),
-                'type': ['Aktual'] * len(daily_counts) + ['Prediksi'] * 7
-            })
-
-            # Konversi ke datetime untuk Plotly
+            # Plot dengan Plotly
             forecast_df['date_only'] = pd.to_datetime(forecast_df['date_only'])
-
-            # Buat visualisasi
             fig = px.line(
-                forecast_df, 
-                x='date_only', 
-                y='count', 
+                forecast_df,
+                x='date_only',
+                y=y_col,
                 color='type',
-                title='Contoh Visualisasi Prediksi (Placeholder)',
-                labels={'date_only': 'Tanggal', 'count': 'Jumlah'},
+                title='Forecast vs Actual',
+                labels={'date_only': 'Tanggal', y_col: y_label},
                 line_dash='type'
             )
-
-            # Garis vertikal pembatas prediksi
+            # Garis vertikal pemisah
             fig.add_shape(
                 type="line",
                 x0=last_date,
                 y0=0,
                 x1=last_date,
-                y1=forecast_df['count'].max() * 1.1,
-                line=dict(color="red", width=2, dash="dash"),
+                y1=forecast_df[y_col].max() * 1.1,
+                line=dict(color="red", dash="dash"),
             )
             fig.add_annotation(
                 x=last_date,
-                y=forecast_df['count'].max() * 1.15,
+                y=forecast_df[y_col].max() * 1.15,
                 text="Mulai Prediksi",
                 showarrow=False,
                 font=dict(color="red")
             )
-
             st.plotly_chart(fig, use_container_width=True)
-            st.markdown("""
-            **Keterangan:**
-            - Garis biru: Data aktual
-            - Garis oranye: Prediksi (placeholder/acak)
-            - Garis merah: Titik awal prediksi
-            """)
-        else:
-            st.warning("Data tidak memiliki cukup entri untuk membuat prediksi.")
 
+    # --- 6) Visualisasi interaktif bawaan Streamlit ---
+    st.subheader("Visualisasi Interaktif (Streamlit)")
+    if selected_metric == 'Jumlah Data per Hari':
+        chart_series = daily_counts.set_index('date_only')['count']
+        st.caption("Jumlah data per hari")
     else:
-        st.warning("Silakan upload data untuk melihat contoh visualisasi prediksi")
-        st.image("https://via.placeholder.com/800x400?text=Upload+Data+Untuk+Melihat+Contoh+Prediksi", 
-                 use_column_width=True)
+        agg_series = df_range.groupby(df_range['date_only'])[selected_metric].sum()
+        st.caption(f"{selected_metric} per hari")
+        chart_series = agg_series
+    st.line_chart(chart_series, use_container_width=True)
 
-    # Progress bar dan timeline
+    # --- 7) Timeline & Feedback ---
     st.divider()
     st.subheader("Timeline Pengembangan")
-
     timeline_data = {
-        "Fitur": ["Integrasi Model Prediksi", "Optimasi Performa", "UI/UX Improvement", "Testing & Deployment"],
+        "Fitur": ["Integrasi Prediksi Sungguhan", "Optimasi Performa", "UI/UX Improvement", "Testing & Deployment"],
         "Status": ["Dalam Pengembangan", "Belum Dimulai", "Belum Dimulai", "Belum Dimulai"],
         "Progress": [75, 0, 0, 0]
     }
@@ -149,5 +146,5 @@ def show():
     with st.expander("Berikan Saran untuk Fitur Forecasting"):
         feedback = st.text_area("Apa yang Anda harapkan dari fitur forecasting?")
         if st.button("Kirim Saran"):
-            st.success("Terima kasih atas sarannya! Kami akan mempertimbangkan untuk pengembangan fitur ini.")
+            st.success("Terima kasih atas sarannya! 🙏")
 
