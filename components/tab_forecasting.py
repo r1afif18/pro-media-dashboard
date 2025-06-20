@@ -7,8 +7,8 @@ from datetime import timedelta
 from statsmodels.tsa.seasonal import seasonal_decompose
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 from sklearn.metrics import mean_absolute_error, mean_squared_error
-from sklearn.model_selection import TimeSeriesSplit
 import logging
+from pandas.tseries.offsets import DateOffset
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -45,6 +45,10 @@ def show(tab):
             # Set index sebagai DateTimeIndex dengan frekuensi harian
             daily_counts = daily_counts.set_index('date_only').asfreq('D')
             daily_counts['count'] = daily_counts['count'].fillna(0)
+            
+            # Pastikan index memiliki frekuensi yang jelas
+            if daily_counts.index.freq is None:
+                daily_counts = daily_counts.asfreq('D')
             
         except Exception as e:
             st.error(f"Terjadi kesalahan dalam memproses tanggal: {str(e)}")
@@ -172,12 +176,12 @@ def show(tab):
                     mae = mean_absolute_error(test, predictions)
                     rmse = np.sqrt(mean_squared_error(test, predictions))
                     
-                    # PERBAIKAN 2: Tangani pembuatan tanggal prediksi dengan benar
+                    # PERBAIKAN UTAMA: Gunakan DateOffset untuk operasi tanggal
                     last_date = ts_data.index[-1]
                     
-                    # Gunakan pd.date_range dengan freq='D'
+                    # Generate forecast dates using proper frequency handling
                     forecast_dates = pd.date_range(
-                        start=last_date + timedelta(days=1),
+                        start=last_date + DateOffset(days=1),
                         periods=forecast_days,
                         freq='D'
                     )
@@ -284,7 +288,7 @@ def show(tab):
         # Additional analysis
         st.subheader("📊 Analisis Tren Lanjutan")
         
-        # PERBAIKAN 3: Analisis korelasi sentimen dengan penanganan error
+        # Analisis korelasi sentimen
         if 'sentiment' in df.columns:
             try:
                 st.markdown("**Korelasi Sentimen dengan Volume Berita**")
@@ -310,14 +314,13 @@ def show(tab):
                 daily_sentiment = df.groupby('date_only')['sentiment_score'].mean().reset_index()
                 daily_sentiment.columns = ['date_only', 'sentiment_avg']
                 
-                # PERBAIKAN 4: Pastikan tipe data konsisten untuk merge
+                # Pastikan tipe data konsisten untuk merge
                 daily_sentiment['date_only'] = pd.to_datetime(daily_sentiment['date_only'])
                 
                 # Merge dengan daily counts
                 analysis_df = daily_counts.reset_index()
                 analysis_df = analysis_df.rename(columns={'date_only': 'date'})
                 
-                # Gabungkan berdasarkan kolom tanggal
                 analysis_df = pd.merge(
                     analysis_df, 
                     daily_sentiment, 
@@ -326,16 +329,14 @@ def show(tab):
                     how='left'
                 )
                 
-                # Hapus kolom duplikat
                 analysis_df = analysis_df.drop(columns=['date_only'])
                 
                 # Hitung korelasi
-                correlation = analysis_df[['count', 'sentiment_avg']].corr().iloc[0,1]
-                
-                st.markdown(f"Koefisien korelasi: **{correlation:.2f}**")
-                
-                # Create scatter plot jika ada data yang cukup
                 if not analysis_df.empty:
+                    correlation = analysis_df[['count', 'sentiment_avg']].corr().iloc[0,1]
+                    st.markdown(f"Koefisien korelasi: **{correlation:.2f}**")
+                    
+                    # Create scatter plot
                     fig_scatter = px.scatter(
                         analysis_df,
                         x='sentiment_avg',
