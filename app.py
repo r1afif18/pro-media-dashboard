@@ -1,26 +1,26 @@
+import streamlit as st
+from dotenv import load_dotenv
+from auth import login_user, register_user, init_db as init_auth_db
+from database import init_db as init_app_db
+from components import (
+    tab_overview,
+    tab_upload,
+    tab_ai_lab,
+    tab_forecasting,
+    tab_insights,
+    tab_about
+)
 import logging
 import os
 import sys
 from contextlib import contextmanager
-import streamlit as st
-from dotenv import load_dotenv
 
-# Setup logging harus setelah impor logging
+# Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
-
-# Impor modul aplikasi SETELAH setup logging
-from auth import login_user, register_user, init_db as init_auth_db
-from database import init_db as init_app_db
-from components.tab_about import show as show_about
-from components.tab_ai_lab import show as show_ai_lab
-from components.tab_forecasting import show as show_forecasting
-from components.tab_insights import show as show_insights
-from components.tab_overview import show as show_overview
-from components.tab_upload import show as show_upload
 
 # Global Exception Handler
 @contextmanager
@@ -117,45 +117,202 @@ else:
             st.session_state.update(DEFAULT_STATE)
             st.rerun()
 
-    # Enhanced CSS
+    # Corporate Professional CSS
     st.markdown("""
     <style>
+    /* Corporate Color Palette */
+    :root {
+        --primary: #1a3c6e;
+        --secondary: #4a6fa5;
+        --accent: #d4a76a;
+        --light: #f5f7fa;
+        --dark: #2c3e50;
+        --success: #27ae60;
+        --warning: #f39c12;
+        --danger: #e74c3c;
+        --gray: #95a5a6;
+    }
+    
+    /* Global Styles */
+    * {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    .stApp {
+        background-color: var(--light);
+    }
+    
+    /* Header */
     .header-title {
-        font-size: 2.8rem;
-        background: linear-gradient(90deg, #2563EB 0%, #7C3AED 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        font-size: 2.5rem;
+        color: var(--primary);
         text-align: center;
         padding: 0.5rem 0;
-        margin-bottom: 2rem;
-        font-weight: 800;
+        margin-bottom: 1.5rem;
+        font-weight: 700;
+        border-bottom: 2px solid var(--accent);
+        padding-bottom: 0.5rem;
     }
-    .metric-card {
-        background-color: #f8f9fa;
-        border-radius: 10px;
-        padding: 15px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        border-left: 4px solid #2563EB;
-        transition: transform 0.3s;
-    }
-    .metric-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 6px 12px rgba(0,0,0,0.1);
-    }
+    
+    /* Tabs */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 10px;
+        gap: 0;
+        background: var(--light);
+        border-bottom: 1px solid #ddd;
     }
+    
     .stTabs [data-baseweb="tab"] {
-        padding: 10px 20px;
-        border-radius: 8px 8px 0 0;
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 0;
+        background: transparent;
+        margin: 0;
+        font-weight: 600;
+        color: var(--gray);
         transition: all 0.3s;
     }
+    
     .stTabs [aria-selected="true"] {
-        background-color: #2563EB20;
-        font-weight: bold;
+        background: white;
+        color: var(--primary);
+        border-bottom: 3px solid var(--primary);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
-    .stProgress > div > div > div > div {
-        background-image: linear-gradient(to right, #4f46e5, #7c3aed);
+    
+    /* Cards */
+    .card {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        border: 1px solid #eaeaea;
+        margin-bottom: 1.5rem;
+    }
+    
+    .card-title {
+        font-size: 1.25rem;
+        color: var(--primary);
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    /* Metrics */
+    .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .metric-card {
+        background: white;
+        border-radius: 8px;
+        padding: 1.25rem;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        border-left: 4px solid var(--primary);
+        text-align: center;
+    }
+    
+    .metric-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--primary);
+        margin: 0.5rem 0;
+    }
+    
+    .metric-label {
+        font-size: 0.9rem;
+        color: var(--gray);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    /* Buttons */
+    .stButton>button {
+        border-radius: 6px;
+        padding: 0.5rem 1.25rem;
+        background: var(--primary);
+        border: none;
+        transition: background 0.3s;
+        font-weight: 600;
+    }
+    
+    .stButton>button:hover {
+        background: #142a4e;
+    }
+    
+    .stButton>button:focus {
+        box-shadow: 0 0 0 2px rgba(26, 60, 110, 0.2);
+    }
+    
+    /* Inputs */
+    .stTextInput>div>div>input, 
+    .stTextArea>div>textarea,
+    .stSelectbox>div>div>div {
+        border-radius: 6px;
+        border: 1px solid #ddd;
+        padding: 0.75rem;
+    }
+    
+    .stTextInput>div>div>input:focus, 
+    .stTextArea>div>textarea:focus,
+    .stSelectbox>div>div>div:focus-within {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px rgba(26, 60, 110, 0.1);
+    }
+    
+    /* Tables */
+    .stDataFrame {
+        border-radius: 8px;
+        border: 1px solid #eaeaea;
+    }
+    
+    /* Charts */
+    .stPlotlyChart {
+        border-radius: 8px;
+        border: 1px solid #eaeaea;
+        background: white;
+        padding: 1rem;
+    }
+    
+    /* Forms */
+    .form-section {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    /* Status Colors */
+    .success {
+        color: var(--success);
+    }
+    
+    .warning {
+        color: var(--warning);
+    }
+    
+    .error {
+        color: var(--danger);
+    }
+    
+    /* Layout */
+    .section {
+        margin-bottom: 2rem;
+    }
+    
+    .section-title {
+        font-size: 1.5rem;
+        color: var(--primary);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -166,15 +323,13 @@ else:
 
     # Create main tabs
     tabs = st.tabs([
-        "📊 Overview", "📤 Upload Data", "🧠 AI Lab", "🔮 Forecasting", 
-        "💡 Insights", "ℹ️ About"
+        "📊 Overview", "📤 Upload Data", "🧠 AI Lab", "💡 Insights", "ℹ️ About"
     ])
     
     # Display tab content with global error handling
     with st_exception_handler():
-        show_overview(tabs[0])
-        show_upload(tabs[1])
-        show_ai_lab(tabs[2])
-        show_forecasting(tabs[3])
-        show_insights(tabs[4])
-        show_about(tabs[5])
+        tab_overview.show(tabs[0])
+        tab_upload.show(tabs[1])
+        tab_ai_lab.show(tabs[2])
+        tab_insights.show(tabs[3])
+        tab_about.show(tabs[4])
