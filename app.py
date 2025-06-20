@@ -1,23 +1,19 @@
 import streamlit as st
 from dotenv import load_dotenv
-import os
 from components import (
     tab_overview,
     tab_upload,
     tab_ai_lab,
     tab_forecasting,
     tab_insights,
-    tab_about
+    tab_about,
 )
+
 from database import init_db as init_app_db
 
-# Load environment variables
 load_dotenv()
-
-# Inisialisasi database aplikasi (hanya untuk data utama, bukan user)
 init_app_db()
 
-# Konfigurasi halaman
 st.set_page_config(
     page_title="ProMedia Insight Hub",
     page_icon="📊",
@@ -25,13 +21,11 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Inisialisasi session state tanpa user
 if 'df' not in st.session_state:
     st.session_state.df = None
 if 'ai_history' not in st.session_state:
     st.session_state.ai_history = []
 
-# CSS Custom untuk styling
 st.markdown("""
 <style>
 .header-title {
@@ -50,15 +44,12 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Tampilkan header
 st.markdown('<h1 class="header-title">📊 ProMedia Insight Hub</h1>', unsafe_allow_html=True)
 st.caption("Dashboard Analisis Media Berbasis AI - Eksplorasi, Insight, dan Visualisasi Data Berita")
 
-# Sidebar tanpa login/regis/user
 with st.sidebar:
     st.info("Selamat datang di ProMedia Insight Hub! Semua fitur dapat diakses tanpa login.")
 
-# Tampilkan tab utama
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "Overview", "Upload Data", "AI Lab", "Forecasting", "Insights", "About"
 ])
