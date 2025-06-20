@@ -8,6 +8,11 @@ from statsmodels.tsa.seasonal import seasonal_decompose
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from sklearn.model_selection import TimeSeriesSplit
+import logging
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def show(tab):
     with tab:
@@ -20,18 +25,32 @@ def show(tab):
             
         df = st.session_state.df.copy()
         
-        # Pastikan kolom tanggal ada
+        # Perbaikan 1: Pastikan kolom tanggal ada dan dalam format yang benar
         if 'date' not in df.columns:
             st.error("Data tidak memiliki kolom tanggal ('date') untuk forecasting")
             return
             
-        # Konversi tanggal dan buat data harian
-        df['date'] = pd.to_datetime(df['date'])
-        df['date_only'] = df['date'].dt.date
-        daily_counts = df.groupby('date_only').size().reset_index(name='count')
-        daily_counts['date_only'] = pd.to_datetime(daily_counts['date_only'])
-        daily_counts = daily_counts.set_index('date_only').asfreq('D')
-        
+        try:
+            # Konversi tanggal dan buat data harian
+            df['date'] = pd.to_datetime(df['date'], errors='coerce')
+            df = df.dropna(subset=['date'])  # Hapus baris dengan tanggal tidak valid
+            
+            # Buat kolom tanggal saja (tanpa waktu)
+            df['date_only'] = df['date'].dt.date
+            
+            # Hitung jumlah berita per hari
+            daily_counts = df.groupby('date_only').size().reset_index(name='count')
+            daily_counts['date_only'] = pd.to_datetime(daily_counts['date_only'])
+            
+            # Set index sebagai DateTimeIndex dengan frekuensi harian
+            daily_counts = daily_counts.set_index('date_only').asfreq('D')
+            daily_counts['count'] = daily_counts['count'].fillna(0)
+            
+        except Exception as e:
+            st.error(f"Terjadi kesalahan dalam memproses tanggal: {str(e)}")
+            logger.error(f"Date processing error: {str(e)}")
+            return
+            
         # Input parameter forecasting
         st.subheader("⚙️ Parameter Forecasting")
         col1, col2 = st.columns(2)
@@ -42,18 +61,28 @@ def show(tab):
         
         with col2:
             model_type = st.selectbox("Model Forecasting", 
-                                     ['Holt-Winters', 'Exponential Smoothing', 'SARIMA (Coming Soon)'])
+                                     ['Holt-Winters', 'Exponential Smoothing'])
             seasonality = st.selectbox("Musiman", 
-                                      ['Harian', 'Mingguan', 'Bulanan'])
+                                      ['Harian (7 hari)', 'Mingguan (4 minggu)', 'Bulanan (12 bulan)'])
         
         # Analisis data time series
         st.subheader("📈 Analisis Deret Waktu")
         
         try:
+            # Tentukan periode berdasarkan pilihan musiman
+            period_map = {
+                'Harian (7 hari)': 7,
+                'Mingguan (4 minggu)': 28,
+                'Bulanan (12 bulan)': 365  # Pendekatan untuk musiman bulanan
+            }
+            period = period_map[seasonality]
+            
             # Decompose time series
-            decomposition = seasonal_decompose(daily_counts['count'].fillna(0), 
-                                              period=7,  # weekly seasonality
-                                              model='additive')
+            decomposition = seasonal_decompose(
+                daily_counts['count'], 
+                period=period,
+                model='additive'
+            )
             
             # Plot decomposition
             fig_decompose = go.Figure()
@@ -102,6 +131,7 @@ def show(tab):
             
         except Exception as e:
             st.warning(f"Tidak dapat melakukan dekomposisi deret waktu: {str(e)}")
+            logger.warning(f"Decomposition error: {str(e)}")
         
         # Forecasting section
         st.subheader("🔮 Prediksi Masa Depan")
@@ -110,7 +140,7 @@ def show(tab):
             with st.spinner("Melatih model dan membuat prediksi..."):
                 try:
                     # Prepare data
-                    ts_data = daily_counts['count'].fillna(0)
+                    ts_data = daily_counts['count']
                     
                     # Split data into train/test
                     test_size_int = int(len(ts_data) * test_size / 100)
@@ -142,8 +172,10 @@ def show(tab):
                     mae = mean_absolute_error(test, predictions)
                     rmse = np.sqrt(mean_squared_error(test, predictions))
                     
-                    # Create forecast dates
+                    # PERBAIKAN 2: Tangani pembuatan tanggal prediksi dengan benar
                     last_date = ts_data.index[-1]
+                    
+                    # Gunakan pd.date_range dengan freq='D'
                     forecast_dates = pd.date_range(
                         start=last_date + timedelta(days=1),
                         periods=forecast_days,
@@ -247,52 +279,87 @@ def show(tab):
                     
                 except Exception as e:
                     st.error(f"Terjadi kesalahan dalam membuat prediksi: {str(e)}")
+                    logger.error(f"Forecasting error: {str(e)}")
         
         # Additional analysis
         st.subheader("📊 Analisis Tren Lanjutan")
         
-        # Correlation analysis
+        # PERBAIKAN 3: Analisis korelasi sentimen dengan penanganan error
         if 'sentiment' in df.columns:
-            st.markdown("**Korelasi Sentimen dengan Volume Berita**")
-            
-            # Create daily sentiment average
-            df['sentiment_score'] = df['sentiment'].map({
-                'positif': 1,
-                'netral': 0,
-                'negatif': -1
-            })
-            
-            daily_sentiment = df.groupby('date_only')['sentiment_score'].mean().reset_index()
-            daily_sentiment.columns = ['date', 'sentiment_avg']
-            
-            # Merge with daily counts
-            analysis_df = daily_counts.reset_index()
-            analysis_df = analysis_df.merge(daily_sentiment, on='date', how='left')
-            
-            # Calculate correlation
-            correlation = analysis_df[['count', 'sentiment_avg']].corr().iloc[0,1]
-            
-            st.markdown(f"Koefisien korelasi: **{correlation:.2f}**")
-            
-            # Create scatter plot
-            fig_scatter = px.scatter(
-                analysis_df,
-                x='sentiment_avg',
-                y='count',
-                title='Hubungan Sentimen dan Volume Berita',
-                labels={'sentiment_avg': 'Rata-rata Sentimen', 'count': 'Jumlah Berita'},
-                trendline='ols'
-            )
-            
-            st.plotly_chart(fig_scatter, use_container_width=True)
-            
-            # Interpretation
-            if correlation > 0.3:
-                st.info("Terdapat korelasi positif: Hari dengan sentimen lebih positif cenderung memiliki lebih banyak berita")
-            elif correlation < -0.3:
-                st.info("Terdapat korelasi negatif: Hari dengan sentimen lebih negatif cenderung memiliki lebih banyak berita")
-            else:
-                st.info("Tidak ada korelasi yang signifikan antara sentimen dan volume berita")
+            try:
+                st.markdown("**Korelasi Sentimen dengan Volume Berita**")
+                
+                # Create daily sentiment average
+                sentiment_map = {
+                    'positif': 1,
+                    'netral': 0,
+                    'negatif': -1,
+                    'positive': 1,  # Handle English versions
+                    'neutral': 0,
+                    'negative': -1
+                }
+                
+                # Normalisasi sentimen
+                df['sentiment'] = df['sentiment'].str.strip().str.lower()
+                df['sentiment_score'] = df['sentiment'].map(sentiment_map)
+                
+                # Hapus baris dengan sentimen tidak valid
+                df = df.dropna(subset=['sentiment_score'])
+                
+                # Group by date_only (yang sudah kita buat sebelumnya)
+                daily_sentiment = df.groupby('date_only')['sentiment_score'].mean().reset_index()
+                daily_sentiment.columns = ['date_only', 'sentiment_avg']
+                
+                # PERBAIKAN 4: Pastikan tipe data konsisten untuk merge
+                daily_sentiment['date_only'] = pd.to_datetime(daily_sentiment['date_only'])
+                
+                # Merge dengan daily counts
+                analysis_df = daily_counts.reset_index()
+                analysis_df = analysis_df.rename(columns={'date_only': 'date'})
+                
+                # Gabungkan berdasarkan kolom tanggal
+                analysis_df = pd.merge(
+                    analysis_df, 
+                    daily_sentiment, 
+                    left_on='date', 
+                    right_on='date_only',
+                    how='left'
+                )
+                
+                # Hapus kolom duplikat
+                analysis_df = analysis_df.drop(columns=['date_only'])
+                
+                # Hitung korelasi
+                correlation = analysis_df[['count', 'sentiment_avg']].corr().iloc[0,1]
+                
+                st.markdown(f"Koefisien korelasi: **{correlation:.2f}**")
+                
+                # Create scatter plot jika ada data yang cukup
+                if not analysis_df.empty:
+                    fig_scatter = px.scatter(
+                        analysis_df,
+                        x='sentiment_avg',
+                        y='count',
+                        title='Hubungan Sentimen dan Volume Berita',
+                        labels={'sentiment_avg': 'Rata-rata Sentimen', 'count': 'Jumlah Berita'},
+                        trendline='ols'
+                    )
+                    
+                    st.plotly_chart(fig_scatter, use_container_width=True)
+                    
+                    # Interpretation
+                    if correlation > 0.3:
+                        st.info("Terdapat korelasi positif: Hari dengan sentimen lebih positif cenderung memiliki lebih banyak berita")
+                    elif correlation < -0.3:
+                        st.info("Terdapat korelasi negatif: Hari dengan sentimen lebih negatif cenderung memiliki lebih banyak berita")
+                    else:
+                        st.info("Tidak ada korelasi yang signifikan antara sentimen dan volume berita")
+                else:
+                    st.warning("Tidak ada data yang cukup untuk analisis korelasi")
+                    
+            except Exception as e:
+                st.error(f"Terjadi kesalahan dalam analisis korelasi: {str(e)}")
+                logger.error(f"Correlation analysis error: {str(e)}")
         
         # Future development note
         st.divider()
