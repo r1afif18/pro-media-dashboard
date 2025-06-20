@@ -10,19 +10,13 @@ from components import (
     tab_insights,
     tab_about
 )
-import sqlite3
-import hashlib
-
-# Import dua init_db dari dua modul berbeda
-from auth import init_db as init_user_db, authenticate_user, register_user
 from database import init_db as init_app_db
 
 # Load environment variables
 load_dotenv()
 
-# Inisialisasi semua database
-init_user_db()    # Membuat & inisialisasi tabel users di users.db
-init_app_db()     # Membuat & inisialisasi tabel lain di app_data.db
+# Inisialisasi database aplikasi (hanya untuk data utama)
+init_app_db()     # Membuat & inisialisasi tabel utama di app_data.db
 
 # Konfigurasi halaman
 st.set_page_config(
@@ -32,13 +26,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Inisialisasi session state
-if 'authentication_status' not in st.session_state:
-    st.session_state.authentication_status = False
-if 'username' not in st.session_state:
-    st.session_state.username = None
-if 'role' not in st.session_state:
-    st.session_state.role = None
+# Inisialisasi session state (tanpa user)
 if 'df' not in st.session_state:
     st.session_state.df = None
 if 'ai_history' not in st.session_state:
@@ -67,70 +55,17 @@ st.markdown("""
 st.markdown('<h1 class="header-title">📊 ProMedia Insight Hub</h1>', unsafe_allow_html=True)
 st.caption("Dashboard Analisis Media Berbasis AI - Eksplorasi, Insight, dan Visualisasi Data Berita")
 
-# Sidebar login & register
+# Sidebar tanpa login/register
 with st.sidebar:
-    if not st.session_state.authentication_status:
-        menu = st.radio("Menu", ["Login", "Daftar Pengguna Baru"])
-        if menu == "Login":
-            st.subheader("Login")
-            username = st.text_input("Username", key="login_username")
-            password = st.text_input("Password", type="password", key="login_password")
-            
-            if st.button("Login"):
-                if username and password:
-                    authenticated, role = authenticate_user(username, password)
-                    if authenticated:
-                        st.session_state.authentication_status = True
-                        st.session_state.username = username
-                        st.session_state.role = role
-                        st.rerun()
-                    else:
-                        st.error("Username atau password salah")
-                else:
-                    st.warning("Harap isi username dan password")
-        elif menu == "Daftar Pengguna Baru":
-            st.subheader("Daftar Pengguna Baru")
-            new_username = st.text_input("Username", key="register_username")
-            new_password = st.text_input("Password", type="password", key="register_password")
-            confirm_password = st.text_input("Konfirmasi Password", type="password", key="confirm_password")
-            if st.button("Daftar"):
-                if not new_username or not new_password or not confirm_password:
-                    st.warning("Lengkapi semua kolom.")
-                elif new_password != confirm_password:
-                    st.warning("Password dan konfirmasi password tidak cocok.")
-                else:
-                    success, message = register_user(new_username, new_password)
-                    if success:
-                        st.success("Pendaftaran berhasil! Silakan login.")
-                    else:
-                        st.error(message)
-    else:
-        st.write(f"Selamat datang, {st.session_state.username}!")
-        if st.button("Logout"):
-            st.session_state.authentication_status = False
-            st.session_state.username = None
-            st.session_state.role = None
-            st.rerun()
+    st.info("Selamat datang di ProMedia Insight Hub! Semua fitur dapat diakses tanpa login.")
 
-# Hanya tampilkan dashboard jika sudah login
-if not st.session_state.authentication_status:
-    st.title("ProMedia Insight Hub")
-    st.info("Silakan login di sidebar untuk mengakses dashboard")
-    st.stop()
-
-# Tab navigasi
-tabs = {
-    "Overview": tab_overview,
-    "Upload & Eksplorasi Data": tab_upload,
-    "AI Lab": tab_ai_lab,
-    "Forecasting": tab_forecasting,
-    "Insights Custom": tab_insights,
-    "Tentang": tab_about,
-}
-
-# Buat tab
-tab_titles = list(tabs.keys())
-active_tab = st.sidebar.radio("Navigasi Menu", tab_titles)
-
-# Tampilkan tab aktif
-tabs[active_tab].show()
+# Tampilkan tab utama
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+    "Overview", "Upload Data", "AI Lab", "Forecasting", "Insights", "About"
+])
+tab_overview(tab1)
+tab_upload(tab2)
+tab_ai_lab(tab3)
+tab_forecasting(tab4)
+tab_insights(tab5)
+tab_about(tab6)
