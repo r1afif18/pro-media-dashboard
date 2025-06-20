@@ -14,7 +14,7 @@ from database import init_db as init_app_db
 # Load environment variables
 load_dotenv()
 
-# Inisialisasi database aplikasi (hanya untuk data utama, bukan user)
+# Inisialisasi database aplikasi (jika perlu)
 init_app_db()
 
 # Konfigurasi halaman
@@ -35,13 +35,13 @@ if 'authenticated' not in st.session_state:
 if 'user' not in st.session_state:
     st.session_state.user = ""
 
-# Blok login sederhana sebelum semua fitur dashboard
+# Login UI
 def login_ui():
     st.title("Login ProMedia Insight Hub")
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
     if st.button("Login"):
-        # Ganti username & password sesuai kebutuhan
+        # Ganti sesuai kebutuhan atau hubungkan ke DB User
         if username == "admin" and password == "admin123":
             st.session_state.authenticated = True
             st.session_state.user = username
@@ -63,7 +63,7 @@ else:
             st.experimental_rerun()
         st.info("Selamat datang di ProMedia Insight Hub!")
 
-    # CSS Custom untuk styling
+    # CSS custom
     st.markdown("""
     <style>
     .header-title {
@@ -82,15 +82,14 @@ else:
     </style>
     """, unsafe_allow_html=True)
 
-    # Tampilkan header
     st.markdown('<h1 class="header-title">📊 ProMedia Insight Hub</h1>', unsafe_allow_html=True)
     st.caption("Dashboard Analisis Media Berbasis AI - Eksplorasi, Insight, dan Visualisasi Data Berita")
 
-    # Tampilkan tab utama
+    # Definisi tab utama dan pemanggilan fungsi
     tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
         "Overview", "Upload Data", "AI Lab", "Forecasting", "Insights", "About"
     ])
-    tab_overview()
+    tab_overview(tab1)
     tab_upload(tab2)
     tab_ai_lab(tab3)
     tab_forecasting(tab4)
