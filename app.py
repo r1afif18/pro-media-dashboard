@@ -1,6 +1,8 @@
-import sys, os
+import os, sys
 print("WORKDIR:", os.getcwd())
-print("PYTHONPATH:", sys.path)
+print("sys.path:", sys.path)
+print("DIR app.py:", os.path.dirname(__file__))
+print("LIST components:", os.listdir(os.path.join(os.path.dirname(__file__), "components")))
 from components.tab_about import tab_about
 from components.tab_overview import tab_overview
 from components.tab_upload import tab_upload
