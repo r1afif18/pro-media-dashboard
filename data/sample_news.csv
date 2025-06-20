@@ -1,7 +1,11 @@
-date,title,sentiment,source,content
-2024-01-01,Pertumbuhan Ekonomi Meningkat,Positif,Media Satu,"Pertumbuhan ekonomi Indonesia meningkat 5% di kuartal terakhir."
-2024-01-02,Inflasi Mulai Terkendali,Netral,Media Dua,"Inflasi mulai menunjukkan tanda-tanda terkendali."
-2024-01-03,Kasus Korupsi Meningkat,Negatif,Media Tiga,"Kasus korupsi di instansi pemerintah meningkat 20%."
-2024-01-04,Startup Teknologi Dapat Pendanaan,Positif,Media Satu,"Startup AI local dapat pendanaan $10 juta."
-2024-01-05,Pemilu Berlangsung Damai,Netral,Media Empat,"Pemilu berlangsung lancar tanpa insiden berarti."
-2024-01-06,Harga BBM Naik Lagi,Negatif,Media Lima,"Kenaikan harga BBM memicu protes masyarakat."
+date,title,content,category,sentiment,sentiment_score,count
+2024-06-10,"Pemerintah Luncurkan Program AI Nasional","Pemerintah resmi mengumumkan strategi nasional AI...","Teknologi","positif",0.87,12
+2024-06-10,"Harga Minyak Naik Imbas Konflik Regional","Harga minyak dunia naik tajam setelah...","Ekonomi","negatif",-0.61,5
+2024-06-11,"Startup Lokal Raih Pendanaan Baru","Startup fintech asal Jakarta mengamankan investasi...","Bisnis","positif",0.76,8
+2024-06-11,"Cuaca Ekstrem Picu Banjir di Ibu Kota","Hujan deras selama 3 hari mengakibatkan banjir...","Lingkungan","negatif",-0.72,10
+2024-06-12,"Timnas U-23 Melaju ke Final","Tim sepak bola Indonesia berhasil mengalahkan...","Olahraga","positif",0.69,15
+2024-06-12,"Kasus Kejahatan Siber Meningkat","Laporan polisi menunjukkan lonjakan kejahatan siber...","Teknologi","negatif",-0.55,7
+2024-06-13,"Festival Kuliner Nusantara Dibuka","Festival makanan khas daerah berlangsung meriah...","Hiburan","positif",0.92,13
+2024-06-13,"Demo Mahasiswa Tuntut Reformasi","Ratusan mahasiswa turun ke jalan...","Politik","netral",0.02,11
+2024-06-14,"Inflasi Melemahkan Daya Beli Masyarakat","Ekonom memperingatkan efek inflasi terhadap...","Ekonomi","negatif",-0.64,9
+2024-06-14,"Perkembangan AI Disorot Global","AI buatan Indonesia diakui internasional...","Teknologi","positif",0.82,10
