@@ -3,7 +3,6 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
-from datetime import datetime, timedelta
 
 def show(tab):
     with tab:
@@ -22,12 +21,14 @@ def show(tab):
             return
             
         try:
-            # Konversi tanggal dan buat data harian
+            # Konversi tanggal dan buat data harian (tanpa operasi timestamp kompleks)
             df['date'] = pd.to_datetime(df['date'], errors='coerce')
             df = df.dropna(subset=['date'])
-            df['date_only'] = df['date'].dt.date
-            daily_counts = df.groupby('date_only').size().reset_index(name='count')
-            daily_counts['date_only'] = pd.to_datetime(daily_counts['date_only'])
+            
+            # Ekstrak tanggal saja sebagai string (YYYY-MM-DD)
+            df['date_str'] = df['date'].dt.strftime('%Y-%m-%d')
+            daily_counts = df.groupby('date_str').size().reset_index(name='count')
+            daily_counts = daily_counts.sort_values('date_str')
             
             # Input parameter forecasting
             st.subheader("⚙️ Parameter Proyeksi")
@@ -36,22 +37,23 @@ def show(tab):
             # Analisis tren sederhana
             st.subheader("📈 Analisis Tren")
             
-            # Hitung moving average 7 hari
+            # Hitung moving average 7 hari (tanpa operasi tanggal)
             daily_counts['7_day_avg'] = daily_counts['count'].rolling(window=7, min_periods=1).mean()
             
             # Visualisasi tren
             fig_trend = px.line(
                 daily_counts,
-                x='date_only',
+                x='date_str',
                 y=['count', '7_day_avg'],
                 title='Tren Jumlah Berita Harian',
-                labels={'date_only': 'Tanggal', 'value': 'Jumlah Berita'},
+                labels={'date_str': 'Tanggal', 'value': 'Jumlah Berita'},
                 color_discrete_map={'count': '#1f77b4', '7_day_avg': '#ff7f0e'}
             )
             
             fig_trend.update_layout(
                 legend_title_text='',
-                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                xaxis=dict(tickangle=45)
             )
             
             st.plotly_chart(fig_trend, use_container_width=True)
@@ -62,22 +64,23 @@ def show(tab):
             if st.button("Buat Proyeksi", use_container_width=True):
                 with st.spinner("Membuat proyeksi tren..."):
                     try:
-                        # Ambil data terbaru
-                        last_date = daily_counts['date_only'].max()
-                        last_7_days = daily_counts[daily_counts['date_only'] > (last_date - timedelta(days=7))]
-                        
-                        # Hitung rata-rata 7 hari terakhir
+                        # Ambil data terbaru (tanpa operasi timestamp)
+                        last_7_days = daily_counts.tail(7)
                         avg_last_7_days = last_7_days['count'].mean()
                         
-                        # Buat tanggal prediksi
-                        future_dates = [last_date + timedelta(days=i) for i in range(1, forecast_days+1)]
+                        # Buat tanggal prediksi sebagai string
+                        last_date = pd.to_datetime(daily_counts['date_str'].iloc[-1])
+                        future_dates = [
+                            (last_date + pd.DateOffset(days=i)).strftime('%Y-%m-%d') 
+                            for i in range(1, forecast_days+1)
+                        ]
                         
-                        # Buat proyeksi (sederhana berdasarkan rata-rata terakhir)
+                        # Buat proyeksi
                         projections = [avg_last_7_days] * forecast_days
                         
                         # Buat dataframe untuk visualisasi
-                        history_df = daily_counts[['date_only', 'count']].rename(columns={
-                            'date_only': 'date',
+                        history_df = daily_counts[['date_str', 'count']].rename(columns={
+                            'date_str': 'date',
                             'count': 'value'
                         })
                         history_df['type'] = 'Aktual'
@@ -102,8 +105,9 @@ def show(tab):
                         )
                         
                         # Tambahkan garis pembatas
+                        last_actual_date = history_df['date'].iloc[-1]
                         fig_projection.add_vline(
-                            x=last_date,
+                            x=last_actual_date,
                             line_dash="dash",
                             line_color="green",
                             annotation_text="Mulai Proyeksi"
@@ -122,16 +126,16 @@ def show(tab):
                             borderwidth=1
                         )
                         
+                        fig_projection.update_layout(xaxis=dict(tickangle=45))
                         st.plotly_chart(fig_projection, use_container_width=True)
                         
                         # Tampilkan detail proyeksi
                         st.subheader("Detail Proyeksi")
-                        projection_df['date'] = projection_df['date'].dt.strftime('%Y-%m-%d')
                         projection_df['value'] = projection_df['value'].round().astype(int)
                         projection_df = projection_df.rename(columns={
                             'date': 'Tanggal',
                             'value': 'Jumlah Berita Proyeksi'
-                        })
+                        }).reset_index(drop=True)
                         
                         st.dataframe(projection_df, use_container_width=True)
                         
@@ -144,30 +148,25 @@ def show(tab):
                         - **Total proyeksi {forecast_days} hari**: {int(avg_last_7_days * forecast_days)} berita
                         
                         Proyeksi ini didasarkan pada rata-rata jumlah berita dalam 7 hari terakhir. 
-                        Untuk hasil yang lebih akurat, pertimbangkan:
-                        - Pola musiman (akhir pekan vs hari kerja)
-                        - Peristiwa khusus yang mungkin mempengaruhi volume berita
                         """)
                         
                     except Exception as e:
                         st.error(f"Terjadi kesalahan dalam membuat proyeksi: {str(e)}")
             
-            # Analisis pola harian
+            # Analisis pola harian (tanpa operasi timestamp)
             st.subheader("📊 Analisis Pola")
             
-            # Analisis hari dalam minggu
             if len(daily_counts) > 0:
-                daily_counts['day_of_week'] = daily_counts['date_only'].dt.day_name()
-                
-                # Urutkan hari
-                day_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-                daily_counts['day_of_week'] = pd.Categorical(
-                    daily_counts['day_of_week'], 
-                    categories=day_order, 
-                    ordered=True
-                )
+                # Gunakan kolom tanggal asli untuk analisis pola
+                daily_counts['date'] = pd.to_datetime(daily_counts['date_str'])
+                daily_counts['day_of_week'] = daily_counts['date'].dt.day_name()
                 
                 weekday_avg = daily_counts.groupby('day_of_week')['count'].mean().reset_index()
+                
+                # Urutkan hari secara manual
+                day_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+                weekday_avg['day_order'] = weekday_avg['day_of_week'].map({day: i for i, day in enumerate(day_order)})
+                weekday_avg = weekday_avg.sort_values('day_order')
                 
                 fig_weekday = px.bar(
                     weekday_avg,
@@ -184,11 +183,10 @@ def show(tab):
             # Rekomendasi strategi
             st.subheader("💡 Rekomendasi Strategi")
             st.markdown("""
-            Berdasarkan analisis tren:
-            1. **Tingkatkan produksi konten** pada hari dengan volume berita rendah
-            2. **Pantau kompetitor** pada hari dengan volume berita tinggi
-            3. **Siapkan konten cadangan** untuk hari-hari sibuk
-            4. **Analisis sentimen** pada hari dengan aktivitas tinggi
+            1. **Fokus pada hari aktif**: Tingkatkan produksi konten di hari Senin-Jumat
+            2. **Analisis akhir pekan**: Pantau perbedaan pola berita di hari Sabtu/Minggu
+            3. **Siapkan konten cadangan**: Untuk hari dengan aktivitas tinggi
+            4. **Bandkan dengan periode sebelumnya**: Lihat pola minggu ke minggu
             """)
             
         except Exception as e:
