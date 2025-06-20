@@ -3,8 +3,14 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
-from datetime import datetime
+from datetime import datetime, timedelta
 from gemini_engine import gemini_engine
+from statsmodels.tsa.holtwinters import ExponentialSmoothing
+import logging
+import utils
+
+# Setup logging
+logger = logging.getLogger(__name__)
 
 def show(tab):
     with tab:
@@ -12,46 +18,45 @@ def show(tab):
         
         # Cek jika data sudah diupload
         if 'df' not in st.session_state or st.session_state.df is None:
-            st.warning("Silakan upload data terlebih dahulu di tab 'Upload Data'")
+            st.warning("📤 Silakan upload data terlebih dahulu di tab 'Upload Data'")
             return
             
         df = st.session_state.df.copy()
         
         # Pastikan kolom tanggal ada
         if 'date' not in df.columns:
-            st.error("Data tidak memiliki kolom tanggal ('date') untuk forecasting")
+            st.error("❌ Data tidak memiliki kolom tanggal ('date') untuk forecasting")
             return
             
         try:
-            # Konversi tanggal dengan penanganan error yang lebih ketat
+            # Konversi tanggal
             df['date'] = pd.to_datetime(df['date'], errors='coerce', format='%Y-%m-%d')
             invalid_dates = df[df['date'].isna()]
             
             if not invalid_dates.empty:
-                st.warning(f"Ditemukan {len(invalid_dates)} baris dengan format tanggal tidak valid. Baris ini akan diabaikan.")
+                st.warning(f"⚠️ Ditemukan {len(invalid_dates)} baris dengan format tanggal tidak valid. Baris ini akan diabaikan.")
             
             df = df.dropna(subset=['date'])
             
             # Pastikan ada data yang valid
             if len(df) == 0:
-                st.error("Tidak ada data tanggal yang valid untuk dianalisis")
+                st.error("❌ Tidak ada data tanggal yang valid untuk dianalisis")
                 return
             
-            # Ekstrak tanggal sebagai string dengan format konsisten
-            df['date_str'] = df['date'].dt.strftime('%Y-%m-%d')
-            daily_counts = df.groupby('date_str').size().reset_index(name='count')
-            daily_counts = daily_counts.sort_values('date_str')
-            
-            # Debug: Tampilkan tipe data
-            st.session_state.daily_counts = daily_counts
+            # Siapkan data harian
+            df['date_only'] = df['date'].dt.date
+            daily_counts = df.groupby('date_only').size().reset_index(name='count')
+            daily_counts = daily_counts.sort_values('date_only')
             
             # Input parameter forecasting
             st.subheader("⚙️ Parameter Proyeksi")
             col1, col2 = st.columns(2)
             with col1:
-                forecast_days = st.slider("Hari ke Depan", 1, 30, 7)
+                forecast_days = st.slider("Hari ke Depan", 1, 90, 14)
             with col2:
-                analysis_depth = st.slider("Kedalaman Analisis (hari)", 7, 90, 30)
+                model_type = st.selectbox("Model Forecasting", 
+                                         ["Holt-Winters", "Moving Average"], 
+                                         index=0)
             
             # Analisis tren real-time
             st.subheader("📈 Analisis Tren Real-Time")
@@ -61,66 +66,54 @@ def show(tab):
             
             # Visualisasi tren
             fig_trend = px.line(
-                daily_counts.tail(analysis_depth),
-                x='date_str',
+                daily_counts,
+                x='date_only',
                 y=['count', '7_day_avg'],
-                title=f'Tren Jumlah Berita ({analysis_depth} Hari Terakhir)',
-                labels={'date_str': 'Tanggal', 'value': 'Jumlah Berita'},
+                title='Tren Jumlah Berita Harian',
+                labels={'date_only': 'Tanggal', 'value': 'Jumlah Berita'},
                 color_discrete_map={'count': '#1f77b4', '7_day_avg': '#ff7f0e'}
             )
-            
-            fig_trend.update_layout(
-                legend_title_text='',
-                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-                xaxis=dict(tickangle=45)
-            )
-            
+            fig_trend.update_layout(legend_title_text='', hovermode='x unified')
             st.plotly_chart(fig_trend, use_container_width=True)
             
-            # Proyeksi sederhana
+            # Forecasting section
             st.subheader("🔮 Proyeksi Masa Depan")
             
-            if st.button("Buat Proyeksi & Analisis Strategi", use_container_width=True, key="forecast_btn"):
-                with st.spinner("Menganalisis data dan membuat proyeksi..."):
+            if st.button("Buat Proyeksi & Analisis Strategi", key="forecast_btn", use_container_width=True):
+                with st.spinner("Menganalisis tren dan membuat proyeksi..."):
                     try:
                         # Pastikan ada cukup data
                         if len(daily_counts) < 7:
-                            st.error("Minimal 7 hari data diperlukan untuk membuat proyeksi")
+                            st.error("❌ Minimal 7 hari data diperlukan untuk membuat proyeksi")
                             return
                             
                         # Ambil data terbaru
-                        last_7_days = daily_counts.tail(7)
-                        avg_last_7_days = last_7_days['count'].mean()
+                        last_date = daily_counts['date_only'].iloc[-1]
                         
-                        # SOLUSI UTAMA: Tangani tanggal dengan sangat hati-hati
-                        # Dapatkan tanggal terakhir sebagai string
-                        last_date_str = daily_counts['date_str'].iloc[-1]
+                        if model_type == "Holt-Winters":
+                            # Model statistik Holt-Winters
+                            model = ExponentialSmoothing(
+                                daily_counts['count'],
+                                seasonal_periods=7,
+                                trend='add',
+                                seasonal='add'
+                            ).fit()
+                            forecast = model.forecast(forecast_days)
+                        else:
+                            # Simple moving average
+                            forecast = [daily_counts['count'].tail(7).mean()] * forecast_days
                         
-                        # Konversi ke objek datetime dengan format eksplisit
-                        last_date = datetime.strptime(last_date_str, '%Y-%m-%d')
-                        
-                        # Buat tanggal prediksi
-                        future_dates = []
-                        for i in range(1, forecast_days + 1):
-                            # Gunakan timedelta dari modul datetime
-                            next_date = last_date + pd.DateOffset(days=i)
-                            
-                            # Konversi ke string dengan format konsisten
-                            future_dates.append(next_date.strftime('%Y-%m-%d'))
-                        
-                        # Buat proyeksi
-                        projections = [avg_last_7_days] * forecast_days
+                        # Generate future dates
+                        future_dates = [last_date + timedelta(days=i) for i in range(1, forecast_days + 1)]
                         
                         # Buat dataframe untuk visualisasi
-                        history_df = daily_counts.tail(30)[['date_str', 'count']].rename(columns={
-                            'date_str': 'date',
-                            'count': 'value'
-                        })
+                        history_df = daily_counts.tail(30)[['date_only', 'count']].rename(
+                            columns={'date_only': 'date', 'count': 'value'})
                         history_df['type'] = 'Aktual'
                         
                         projection_df = pd.DataFrame({
                             'date': future_dates,
-                            'value': projections,
+                            'value': forecast,
                             'type': 'Proyeksi'
                         })
                         
@@ -132,33 +125,46 @@ def show(tab):
                             x='date',
                             y='value',
                             color='type',
-                            title=f'Proyeksi Jumlah Berita {forecast_days} Hari ke Depan',
+                            title=f'Proyeksi {forecast_days} Hari ke Depan',
                             labels={'date': 'Tanggal', 'value': 'Jumlah Berita'},
                             color_discrete_map={'Aktual': '#1f77b4', 'Proyeksi': '#ff7f0e'}
                         )
                         
                         # Tambahkan garis pembatas
                         fig_projection.add_vline(
-                            x=history_df['date'].iloc[-1],
+                            x=last_date,
                             line_dash="dash",
                             line_color="green",
                             annotation_text="Mulai Proyeksi"
                         )
                         
-                        # Tambahkan anotasi
-                        fig_projection.add_annotation(
-                            x=0.05,
-                            y=0.95,
-                            xref="paper",
-                            yref="paper",
-                            text=f"Proyeksi: {int(avg_last_7_days)} berita/hari",
-                            showarrow=False,
-                            bgcolor="white",
-                            bordercolor="black",
-                            borderwidth=1
-                        )
+                        # Confidence interval (untuk Holt-Winters)
+                        if model_type == "Holt-Winters":
+                            conf_int = model.prediction_intervals(forecast_days)
+                            fig_projection.add_traces([
+                                go.Scatter(
+                                    x=future_dates,
+                                    y=conf_int[:, 0],
+                                    mode='lines',
+                                    line=dict(width=0),
+                                    showlegend=False,
+                                    name='CI Bawah'
+                                ),
+                                go.Scatter(
+                                    x=future_dates,
+                                    y=conf_int[:, 1],
+                                    mode='lines',
+                                    line=dict(width=0),
+                                    fill='tonexty',
+                                    fillcolor='rgba(255, 126, 14, 0.2)',
+                                    name='95% CI'
+                                )
+                            ])
                         
-                        fig_projection.update_layout(xaxis=dict(tickangle=45))
+                        fig_projection.update_layout(
+                            xaxis=dict(tickangle=45),
+                            hovermode='x unified'
+                        )
                         st.plotly_chart(fig_projection, use_container_width=True)
                         
                         # Tampilkan detail proyeksi
@@ -175,45 +181,31 @@ def show(tab):
                         # Rekomendasi strategi oleh AI
                         st.subheader("💡 Rekomendasi Strategi oleh AI")
                         
-                        # Siapkan data untuk Gemini
-                        data_for_ai = {
-                            "tren_terakhir": daily_counts.tail(7).to_dict('records'),
-                            "proyeksi": projection_display.to_dict('records'),
-                            "rata_harian": daily_counts['count'].mean(),
-                            "max_harian": daily_counts['count'].max(),
-                            "min_harian": daily_counts['count'].min()
-                        }
-                        
                         # Prompt untuk Gemini
                         prompt = f"""
-                        [INSTRUKSI]
-                        Berikan rekomendasi strategi manajemen konten berdasarkan data berikut:
-                        {data_for_ai}
+                        Berikan rekomendasi strategi manajemen konten berdasarkan:
+                        - Tren historis: {daily_counts.tail(7)['count'].tolist()}
+                        - Proyeksi: {forecast.tolist() if hasattr(forecast, 'tolist') else forecast}
+                        - Model: {model_type}
                         
-                        [FORMAT]
-                        1. 🎯 Optimalisasi Produksi Konten
-                        2. 📊 Strategi Distribusi 
-                        3. ⚠️ Persiapan Fluktuasi
-                        4. 🔍 Analisis Kompetitif
+                        Format:
+                        1. **Optimalisasi Produksi Konten**
+                        - [Analisis & rekomendasi]
+                        
+                        2. **Strategi Distribusi** 
+                        - [Analisis & rekomendasi]
+                        
+                        3. **Persiapan Fluktuasi**
+                        - [Analisis & rekomendasi]
                         
                         Gunakan data spesifik dan berikan saran praktis.
                         """
                         
-                        # Dapatkan rekomendasi dari Gemini
                         recommendation = gemini_engine.ask(prompt, pd.DataFrame())
                         st.markdown(recommendation)
                         
-                        # Simpan rekomendasi
-                        st.session_state.last_recommendation = recommendation
-                        
                     except Exception as e:
-                        st.error(f"Terjadi kesalahan dalam membuat proyeksi: {str(e)}")
-                        # Tampilkan informasi debugging
-                        st.error("Informasi Debugging:")
-                        st.error(f"Tipe last_date_str: {type(last_date_str)}")
-                        st.error(f"Nilai last_date_str: {last_date_str}")
-                        if 'last_date' in locals():
-                            st.error(f"Tipe last_date: {type(last_date)}")
+                        st.error(f"⚠️ Error forecasting: {str(e)}")
         
         except Exception as e:
-            st.error(f"Terjadi kesalahan dalam memproses data: {str(e)}")
+            st.error(f"⚠️ Error pemrosesan: {str(e)}")
