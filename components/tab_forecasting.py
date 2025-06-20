@@ -3,11 +3,11 @@ import plotly.express as px
 import numpy as np
 import pandas as pd
 from datetime import timedelta
-from gemini_engine import generate_time_series_insights
 
 def show():
     st.header("🔮 Forecasting")
-
+    
+    # Placeholder yang lebih menarik
     st.info("""
     **Fitur dalam Pengembangan**  
     Versi berikutnya akan menyertakan prediksi tren menggunakan:
@@ -15,84 +15,114 @@ def show():
     - Model ARIMA/Prophet
     - Integrasi dengan Gemini untuk prediksi kualitatif
     """)
-
+    
+    # Tampilkan grafik placeholder jika data tersedia
     if 'df' in st.session_state and st.session_state.df is not None:
         df = st.session_state.df.copy()
         
-        # Pilih kolom tanggal dan metrik (misal, count berita/sentimen)
-        date_columns = [c for c in df.columns if 'date' in c.lower()]
-        if not date_columns:
-            st.warning("Data tidak memiliki kolom bertipe tanggal.")
-            return
-
-        selected_date_column = st.selectbox('Pilih Kolom Tanggal', date_columns)
-        numeric_columns = df.select_dtypes(include=[np.number]).columns.tolist()
-        if not numeric_columns:
-            st.warning("Data tidak memiliki kolom numerik untuk prediksi.")
-            return
-
-        selected_metric = st.selectbox('Pilih Kolom Metrik/Target', numeric_columns)
+        # Siapkan data untuk contoh visualisasi
+        df['date'] = pd.to_datetime(df['date'])
+        df['date_only'] = df['date'].dt.date
         
-        # Kontrol rentang waktu
-        df[selected_date_column] = pd.to_datetime(df[selected_date_column])
-        start_date = st.date_input('Tanggal Mulai', value=df[selected_date_column].min().date())
-        end_date = st.date_input('Tanggal Akhir', value=df[selected_date_column].max().date())
-        mask = (df[selected_date_column].dt.date >= start_date) & (df[selected_date_column].dt.date <= end_date)
-        df_range = df.loc[mask]
-
-        if df_range.empty:
-            st.warning("Tidak ada data dalam rentang waktu ini.")
-            return
-
-        # Agregasi harian (atau sesuai granularity)
-        daily_counts = (
-            df_range.groupby(df_range[selected_date_column].dt.date)[selected_metric]
-            .sum()
-            .reset_index(name=selected_metric)
-        )
-
-        # Visualisasi interaktif
-        st.line_chart(
-            daily_counts.set_index(selected_date_column)[selected_metric],
-            use_container_width=True
-        )
-
-        # Pilihan model (dummy parameter untuk UI)
-        model_type = st.radio('Pilih Model', ['ARIMA', 'Prophet', 'LSTM'])
-        if model_type == 'ARIMA':
-            p = st.slider('Order (p)', 0, 10, 5)
-            q = st.slider('Order (q)', 0, 10, 5)
-            st.caption(f'ARIMA Order dipilih: p={p}, q={q}')
-        elif model_type == 'Prophet':
-            st.caption("Prophet default setting (belum diimplementasi).")
-        elif model_type == 'LSTM':
-            st.caption("LSTM (deep learning) coming soon!")
-
-        # Tombol AI Insight
-        if st.button("Minta Insight Prediksi AI (Gemini)"):
-            preview_data = daily_counts.tail(14).to_markdown(index=False)
-            with st.spinner("Meminta insight ke Gemini..."):
-                insight = generate_time_series_insights(preview_data)
-                st.markdown("### 📊 Insight Gemini:")
-                st.write(insight)
-        
-        # Progress bar dan timeline
-        st.divider()
-        st.subheader("Timeline Pengembangan")
-        timeline_data = {
-            "Fitur": ["Integrasi Model Prediksi", "Optimasi Performa", "UI/UX Improvement", "Testing & Deployment"],
-            "Status": ["Dalam Pengembangan", "Belum Dimulai", "Belum Dimulai", "Belum Dimulai"],
-            "Progress": [75, 0, 0, 0]
-        }
-        timeline_df = pd.DataFrame(timeline_data)
-        st.dataframe(timeline_df, use_container_width=True)
-        
-        # Feedback
-        with st.expander("Berikan Saran untuk Fitur Forecasting"):
-            feedback = st.text_area("Apa yang Anda harapkan dari fitur forecasting?")
-            if st.button("Kirim Saran"):
-                st.success("Terima kasih atas sarannya! Kami akan mempertimbangkan untuk pengembangan fitur ini.")
-
+        try:
+            daily_counts = df.groupby('date_only').size().reset_index(name='count')
+            
+            # Pastikan daily_counts memiliki setidaknya satu baris data
+            if not daily_counts.empty:
+                # PERBAIKAN: Gunakan pendekatan yang lebih kompatibel
+                last_date = daily_counts['date_only'].max()
+                
+                # Buat rentang tanggal untuk prediksi
+                future_dates = pd.date_range(
+                    start=pd.to_datetime(last_date) + timedelta(days=1),
+                    periods=7,
+                    freq='D'
+                ).date.tolist()
+                
+                # Generate random data untuk prediksi
+                np.random.seed(42)
+                mean_count = daily_counts['count'].mean()
+                predictions = np.random.randint(
+                    int(mean_count * 0.8),
+                    int(mean_count * 1.2),
+                    size=7
+                )
+                
+                # Gabungkan data aktual dan prediksi
+                forecast_df = pd.DataFrame({
+                    'date_only': daily_counts['date_only'].tolist() + future_dates,
+                    'count': daily_counts['count'].tolist() + predictions.tolist(),
+                    'type': ['Aktual'] * len(daily_counts) + ['Prediksi'] * 7
+                })
+                
+                # Konversi ke datetime untuk Plotly
+                forecast_df['date_only'] = pd.to_datetime(forecast_df['date_only'])
+                
+                # Buat visualisasi
+                fig = px.line(
+                    forecast_df, 
+                    x='date_only', 
+                    y='count', 
+                    color='type',
+                    title='Contoh Visualisasi Prediksi (Placeholder)',
+                    labels={'date_only': 'Tanggal', 'count': 'Jumlah Berita'},
+                    line_dash='type'
+                )
+                
+                # Tambahkan garis vertikal untuk memisahkan aktual dan prediksi
+                # PERBAIKAN: Gunakan pendekatan yang berbeda untuk vline
+                fig.add_shape(
+                    type="line",
+                    x0=last_date,
+                    y0=0,
+                    x1=last_date,
+                    y1=forecast_df['count'].max() * 1.1,
+                    line=dict(color="red", width=2, dash="dash"),
+                )
+                
+                # Tambahkan anotasi
+                fig.add_annotation(
+                    x=last_date,
+                    y=forecast_df['count'].max() * 1.15,
+                    text="Mulai Prediksi",
+                    showarrow=False,
+                    font=dict(color="red")
+                )
+                
+                st.plotly_chart(fig, use_container_width=True)
+                
+                # Tambahkan penjelasan
+                st.markdown("""
+                **Keterangan:**
+                - Garis biru: Data aktual
+                - Garis oranye: Prediksi (contoh acak)
+                - Garis putus-putus merah: Titik awal prediksi
+                """)
+            else:
+                st.warning("Data tidak memiliki cukup entri untuk membuat prediksi")
+        except Exception as e:
+            st.error(f"Terjadi kesalahan saat membuat prediksi: {str(e)}")
+            st.warning("Silakan coba dengan dataset yang berbeda")
     else:
         st.warning("Silakan upload data untuk melihat contoh visualisasi prediksi")
-        st.image("https://via.placeholder.com/800x400?text=Upload+Data+Untuk+Melihat+Contoh+Prediksi", use_column_width=True)
+        st.image("https://via.placeholder.com/800x400?text=Upload+Data+Untuk+Melihat+Contoh+Prediksi", 
+                 use_column_width=True)
+    
+    # Progress bar dan timeline
+    st.divider()
+    st.subheader("Timeline Pengembangan")
+    
+    timeline_data = {
+        "Fitur": ["Integrasi Model Prediksi", "Optimasi Performa", "UI/UX Improvement", "Testing & Deployment"],
+        "Status": ["Dalam Pengembangan", "Belum Dimulai", "Belum Dimulai", "Belum Dimulai"],
+        "Progress": [75, 0, 0, 0]
+    }
+    
+    timeline_df = pd.DataFrame(timeline_data)
+    st.dataframe(timeline_df, use_container_width=True)
+    
+    # Tombol untuk memberikan feedback
+    with st.expander("Berikan Saran untuk Fitur Forecasting"):
+        feedback = st.text_area("Apa yang Anda harapkan dari fitur forecasting?")
+        if st.button("Kirim Saran"):
+            st.success("Terima kasih atas sarannya! Kami akan mempertimbangkan untuk pengembangan fitur ini.")
