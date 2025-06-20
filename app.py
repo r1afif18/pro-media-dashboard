@@ -3,7 +3,7 @@ print("WORKDIR:", os.getcwd())
 print("sys.path:", sys.path)
 print("DIR app.py:", os.path.dirname(__file__))
 print("LIST components:", os.listdir(os.path.join(os.path.dirname(__file__), "components")))
-from components.tab_about import tab_about
+from components.tab_about import show as tab_about
 from components.tab_overview import tab_overview
 from components.tab_upload import tab_upload
 from components.tab_ai_lab import tab_ai_lab
