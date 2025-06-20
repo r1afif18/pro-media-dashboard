@@ -110,7 +110,7 @@ else:
         if st.session_state.role == "admin":
             registration_ui()
         
-        if st.button("Logout"):
+        if st.button("Logout", use_container_width=True):
             for key in list(st.session_state.keys()):
                 if key not in DEFAULT_STATE:
                     del st.session_state[key]
@@ -139,110 +139,120 @@ else:
     }
     
     .stApp {
-        background-color: var(--light);
+        background-color: #f9fafc;
     }
     
     /* Header */
     .header-title {
-        font-size: 2.5rem;
+        font-size: 2.1rem;
         color: var(--primary);
         text-align: center;
         padding: 0.5rem 0;
         margin-bottom: 1.5rem;
-        font-weight: 700;
-        border-bottom: 2px solid var(--accent);
-        padding-bottom: 0.5rem;
+        font-weight: 600;
+        border-bottom: 1px solid #e0e6ed;
+        padding-bottom: 0.8rem;
+        letter-spacing: -0.5px;
     }
     
     /* Tabs */
     .stTabs [data-baseweb="tab-list"] {
         gap: 0;
-        background: var(--light);
-        border-bottom: 1px solid #ddd;
+        background: #ffffff;
+        border-bottom: 1px solid #e0e6ed;
+        padding: 0 1rem;
     }
     
     .stTabs [data-baseweb="tab"] {
-        padding: 0.75rem 1.5rem;
+        padding: 0.8rem 1.8rem;
         border: none;
         border-radius: 0;
         background: transparent;
         margin: 0;
-        font-weight: 600;
-        color: var(--gray);
+        font-weight: 500;
+        color: #7f8fa4;
         transition: all 0.3s;
+        letter-spacing: -0.2px;
     }
     
     .stTabs [aria-selected="true"] {
-        background: white;
+        background: #ffffff;
         color: var(--primary);
         border-bottom: 3px solid var(--primary);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        box-shadow: none;
+        font-weight: 600;
     }
     
     /* Cards */
     .card {
-        background: white;
+        background: #ffffff;
         border-radius: 8px;
         padding: 1.5rem;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        border: 1px solid #eaeaea;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.03);
+        border: 1px solid #e6eaf0;
         margin-bottom: 1.5rem;
     }
     
     .card-title {
-        font-size: 1.25rem;
+        font-size: 1.15rem;
         color: var(--primary);
-        margin-bottom: 1rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 1px solid #eee;
+        margin-bottom: 1.2rem;
+        padding-bottom: 0.8rem;
+        border-bottom: 1px solid #f0f2f5;
         display: flex;
         align-items: center;
         gap: 0.5rem;
+        font-weight: 600;
+        letter-spacing: -0.2px;
     }
     
     /* Metrics */
     .metric-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1rem;
-        margin-bottom: 1.5rem;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.2rem;
+        margin-bottom: 1.8rem;
     }
     
     .metric-card {
-        background: white;
+        background: #ffffff;
         border-radius: 8px;
-        padding: 1.25rem;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        padding: 1.25rem 1.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.03);
         border-left: 4px solid var(--primary);
-        text-align: center;
+        text-align: left;
     }
     
     .metric-value {
-        font-size: 1.75rem;
+        font-size: 1.65rem;
         font-weight: 700;
-        color: var(--primary);
-        margin: 0.5rem 0;
+        color: var(--dark);
+        margin: 0.5rem 0 0.2rem;
+        letter-spacing: -0.5px;
     }
     
     .metric-label {
-        font-size: 0.9rem;
+        font-size: 0.85rem;
         color: var(--gray);
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.8px;
+        font-weight: 500;
     }
     
     /* Buttons */
     .stButton>button {
         border-radius: 6px;
-        padding: 0.5rem 1.25rem;
+        padding: 0.6rem 1.5rem;
         background: var(--primary);
         border: none;
         transition: background 0.3s;
-        font-weight: 600;
+        font-weight: 500;
+        font-size: 0.95rem;
     }
     
     .stButton>button:hover {
         background: #142a4e;
+        box-shadow: 0 2px 8px rgba(26, 60, 110, 0.15);
     }
     
     .stButton>button:focus {
@@ -254,8 +264,9 @@ else:
     .stTextArea>div>textarea,
     .stSelectbox>div>div>div {
         border-radius: 6px;
-        border: 1px solid #ddd;
-        padding: 0.75rem;
+        border: 1px solid #dde3e9;
+        padding: 0.8rem;
+        background: #ffffff;
     }
     
     .stTextInput>div>div>input:focus, 
@@ -268,15 +279,16 @@ else:
     /* Tables */
     .stDataFrame {
         border-radius: 8px;
-        border: 1px solid #eaeaea;
+        border: 1px solid #e6eaf0;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
     }
     
     /* Charts */
     .stPlotlyChart {
         border-radius: 8px;
-        border: 1px solid #eaeaea;
+        border: 1px solid #e6eaf0;
         background: white;
-        padding: 1rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
     }
     
     /* Forms */
@@ -285,7 +297,8 @@ else:
         border-radius: 8px;
         padding: 1.5rem;
         margin-bottom: 1.5rem;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+        border: 1px solid #e6eaf0;
     }
     
     /* Status Colors */
@@ -303,16 +316,51 @@ else:
     
     /* Layout */
     .section {
-        margin-bottom: 2rem;
+        margin-bottom: 2.2rem;
     }
     
     .section-title {
-        font-size: 1.5rem;
+        font-size: 1.4rem;
         color: var(--primary);
-        margin-bottom: 1rem;
+        margin-bottom: 1.2rem;
         display: flex;
         align-items: center;
         gap: 0.5rem;
+        font-weight: 600;
+        letter-spacing: -0.3px;
+    }
+    
+    /* Expander */
+    .stExpander {
+        border: 1px solid #e6eaf0;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+    
+    .stExpander summary {
+        padding: 1rem 1.5rem;
+        font-weight: 500;
+    }
+    
+    .stExpander div[data-baseweb="collapse"] {
+        padding: 0 1.5rem 1.5rem;
+    }
+    
+    /* File Uploader */
+    .stFileUploader {
+        border: 1px dashed #dde3e9;
+        border-radius: 8px;
+        padding: 1.5rem;
+        background: #f9fbfd;
+    }
+    
+    /* Warning Messages */
+    .warning {
+        background: #fef6e6;
+        border-left: 4px solid var(--warning);
+        padding: 1rem;
+        border-radius: 0 4px 4px 0;
+        margin: 1rem 0;
     }
     </style>
     """, unsafe_allow_html=True)
