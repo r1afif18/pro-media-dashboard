@@ -2,11 +2,9 @@ import sqlite3
 import hashlib
 
 def hash_password(password):
-    """Hash password dengan SHA256"""
     return hashlib.sha256(password.encode()).hexdigest()
 
 def init_db():
-    """Inisialisasi database user dan buat admin default"""
     conn = sqlite3.connect('users.db')
     c = conn.cursor()
     c.execute('''
@@ -18,7 +16,6 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
-    # Tambahkan user admin default jika belum ada
     c.execute("SELECT * FROM users WHERE username='admin'")
     if not c.fetchone():
         hashed_password = hash_password("admin123")
@@ -30,7 +27,6 @@ def init_db():
     conn.close()
 
 def register_user(username, password, role="user"):
-    """Registrasi user baru"""
     init_db()
     conn = sqlite3.connect('users.db')
     c = conn.cursor()
@@ -48,7 +44,6 @@ def register_user(username, password, role="user"):
         conn.close()
 
 def login_user(username, password):
-    """Cek login user"""
     init_db()
     conn = sqlite3.connect('users.db')
     c = conn.cursor()
