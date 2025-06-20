@@ -8,43 +8,37 @@ def init_db():
     """Inisialisasi database utama untuk aplikasi (tanpa tabel user)"""
     with sqlite3.connect(DB_PATH) as conn:
         c = conn.cursor()
-        # Contoh membuat tabel yang dibutuhkan aplikasi
         c.execute('''
             CREATE TABLE IF NOT EXISTS custom_insights (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT,
                 title TEXT,
                 content TEXT,
                 tags TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
-        # Tambahkan tabel lain sesuai kebutuhan aplikasi
         conn.commit()
 
-def save_custom_insight(username, title, content, tags):
-    """Simpan custom insight ke database."""
+def save_custom_insight(title, content, tags):
     try:
         tag_str = ','.join(tags) if tags else None
         with sqlite3.connect(DB_PATH) as conn:
             c = conn.cursor()
             c.execute(
-                "INSERT INTO custom_insights (username, title, content, tags) VALUES (?, ?, ?, ?)",
-                (username, title, content, tag_str)
+                "INSERT INTO custom_insights (title, content, tags) VALUES (?, ?, ?)",
+                (title, content, tag_str)
             )
             conn.commit()
-            logger.info(f"Saved custom insight for {username}")
+            logger.info(f"Saved custom insight: {title}")
     except Exception as e:
         logger.error(f"Error saving custom insight: {str(e)}")
 
-def get_custom_insights(username):
-    """Ambil custom insights untuk user tertentu."""
+def get_custom_insights():
     try:
         with sqlite3.connect(DB_PATH) as conn:
             c = conn.cursor()
             c.execute(
-                "SELECT id, title, content, tags, created_at FROM custom_insights WHERE username = ? ORDER BY created_at DESC",
-                (username,)
+                "SELECT id, title, content, tags, created_at FROM custom_insights ORDER BY created_at DESC"
             )
             rows = c.fetchall()
             insights = []
