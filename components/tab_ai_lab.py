@@ -2,7 +2,6 @@ import streamlit as st
 from gemini_engine import gemini_engine
 import time
 from database import save_ai_history, get_ai_history
-from pandasai.llm.google_generative_ai import GoogleGenerativeAI
 
 def show():
     st.header("🧠 AI Lab")
