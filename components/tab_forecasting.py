@@ -26,11 +26,17 @@ def show(tab):
         with col1:
             # Pilih kolom tanggal
             date_cols = [col for col in df.columns if 'date' in col.lower()]
-            date_column = st.selectbox("Kolom Tanggal", date_cols if date_cols else df.columns)
+            if not date_cols:
+                st.error("❌ Tidak ditemukan kolom tanggal di dataset")
+                return
+            date_column = st.selectbox("Kolom Tanggal", date_cols)
             
             # Pilih kolom numerik
             numeric_cols = df.select_dtypes(include=np.number).columns.tolist()
-            metric_column = st.selectbox("Kolom Metrik", numeric_cols if numeric_cols else df.columns)
+            if not numeric_cols:
+                st.error("❌ Tidak ditemukan kolom numerik di dataset")
+                return
+            metric_column = st.selectbox("Kolom Metrik", numeric_cols)
             
         with col2:
             # Pilih kategori untuk grouping (opsional)
@@ -46,7 +52,7 @@ def show(tab):
             forecast_periods = st.slider("Jumlah Periode ke Depan", 1, 30, 7)
         with col2:
             method = st.selectbox("Metode Forecasting", 
-                                 ["Rata-rata Bergerak", "Pola Musiman", "Sederhana"])
+                                 ["Rata-rata Bergerak", "Pola Terakhir", "Sederhana"])
         
         # Tombol analisis
         if st.button("Buat Proyeksi & Analisis Strategi", use_container_width=True):
@@ -59,17 +65,17 @@ def show(tab):
                     try:
                         df_clean[date_column] = pd.to_datetime(df_clean[date_column], errors='coerce')
                         df_clean = df_clean.dropna(subset=[date_column])
-                    except:
-                        st.error("Gagal mengonversi kolom tanggal. Pastikan format tanggal valid.")
+                    except Exception as e:
+                        st.error(f"❌ Gagal mengonversi kolom tanggal: {str(e)}")
                         return
                     
                     # Agregasi data berdasarkan periode
-                    if time_window == "Harian":
-                        df_clean['period'] = df_clean[date_column].dt.date
-                    elif time_window == "Mingguan":
-                        df_clean['period'] = df_clean[date_column].dt.to_period('W').dt.start_time.dt.date
-                    else:  # Bulanan
-                        df_clean['period'] = df_clean[date_column].dt.to_period('M').dt.start_time.dt.date
+                    df_clean['period'] = pd.to_datetime(df_clean[date_column])
+                    
+                    if time_window == "Mingguan":
+                        df_clean['period'] = df_clean['period'].dt.to_period('W').dt.start_time
+                    elif time_window == "Bulanan":
+                        df_clean['period'] = df_clean['period'].dt.to_period('M').dt.start_time
                     
                     # Grouping data
                     group_cols = ['period']
@@ -106,12 +112,24 @@ def show(tab):
                     
                     # Buat data proyeksi
                     last_date = df_agg['period'].iloc[-1]
-                    future_dates = [last_date + timedelta(days=i) for i in range(1, forecast_periods + 1)]
+                    
+                    # PERBAIKAN UTAMA: Gunakan objek datetime untuk operasi tanggal
+                    if time_window == "Harian":
+                        delta = timedelta(days=1)
+                    elif time_window == "Mingguan":
+                        delta = timedelta(weeks=1)
+                    else:  # Bulanan
+                        delta = timedelta(days=30)  # Perkiraan
+                    
+                    # Buat tanggal proyeksi
+                    future_dates = []
+                    for i in range(1, forecast_periods + 1):
+                        next_date = last_date + i * delta
+                        future_dates.append(next_date)
                     
                     if method == "Rata-rata Bergerak":
                         proj_values = [avg_value] * forecast_periods
-                    elif method == "Pola Musiman":
-                        # Contoh sederhana: gunakan nilai terakhir
+                    elif method == "Pola Terakhir":
                         proj_values = [last_value] * forecast_periods
                     else:
                         # Metode sederhana: rata-rata 3 periode terakhir
