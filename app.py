@@ -1,4 +1,5 @@
 from dotenv import load_dotenv
+from components.db import init_app_db
 from components.tab_about import show as tab_about
 from components.tab_overview import tab_overview
 from components.tab_upload import tab_upload
