@@ -83,6 +83,7 @@ def show(tab):
                         group_cols.append(category_column)
                     
                     df_agg = df_clean.groupby(group_cols)[metric_column].sum().reset_index()
+                    df_agg = df_agg.sort_values('period').reset_index(drop=True)
                     
                     # Visualisasi data historis
                     st.subheader("📈 Data Historis")
@@ -113,19 +114,16 @@ def show(tab):
                     # Buat data proyeksi
                     last_date = df_agg['period'].iloc[-1]
                     
-                    # PERBAIKAN UTAMA: Gunakan objek datetime untuk operasi tanggal
+                    # PERBAIKAN UTAMA: Gunakan metode yang benar untuk penambahan tanggal
                     if time_window == "Harian":
-                        delta = timedelta(days=1)
+                        # Untuk harian, gunakan timedelta dengan cara yang benar
+                        future_dates = [last_date + timedelta(days=i) for i in range(1, forecast_periods+1)]
                     elif time_window == "Mingguan":
-                        delta = timedelta(weeks=1)
+                        # Untuk mingguan, gunakan timedelta weeks
+                        future_dates = [last_date + timedelta(weeks=i) for i in range(1, forecast_periods+1)]
                     else:  # Bulanan
-                        delta = timedelta(days=30)  # Perkiraan
-                    
-                    # Buat tanggal proyeksi
-                    future_dates = []
-                    for i in range(1, forecast_periods + 1):
-                        next_date = last_date + i * delta
-                        future_dates.append(next_date)
+                        # Untuk bulanan, gunakan DateOffset yang lebih akurat
+                        future_dates = [last_date + pd.DateOffset(months=i) for i in range(1, forecast_periods+1)]
                     
                     if method == "Rata-rata Bergerak":
                         proj_values = [avg_value] * forecast_periods
