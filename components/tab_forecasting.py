@@ -23,8 +23,13 @@ def show(tab):
             return
             
         try:
-            # Konversi tanggal dengan penanganan error
-            df['date'] = pd.to_datetime(df['date'], errors='coerce')
+            # Konversi tanggal dengan penanganan error yang lebih ketat
+            df['date'] = pd.to_datetime(df['date'], errors='coerce', format='%Y-%m-%d')
+            invalid_dates = df[df['date'].isna()]
+            
+            if not invalid_dates.empty:
+                st.warning(f"Ditemukan {len(invalid_dates)} baris dengan format tanggal tidak valid. Baris ini akan diabaikan.")
+            
             df = df.dropna(subset=['date'])
             
             # Pastikan ada data yang valid
@@ -32,10 +37,13 @@ def show(tab):
                 st.error("Tidak ada data tanggal yang valid untuk dianalisis")
                 return
             
-            # Ekstrak tanggal sebagai string
+            # Ekstrak tanggal sebagai string dengan format konsisten
             df['date_str'] = df['date'].dt.strftime('%Y-%m-%d')
             daily_counts = df.groupby('date_str').size().reset_index(name='count')
             daily_counts = daily_counts.sort_values('date_str')
+            
+            # Debug: Tampilkan tipe data
+            st.session_state.daily_counts = daily_counts
             
             # Input parameter forecasting
             st.subheader("⚙️ Parameter Proyeksi")
@@ -84,14 +92,20 @@ def show(tab):
                         last_7_days = daily_counts.tail(7)
                         avg_last_7_days = last_7_days['count'].mean()
                         
-                        # PERBAIKAN UTAMA: Tangani tanggal dengan benar
+                        # SOLUSI UTAMA: Tangani tanggal dengan sangat hati-hati
+                        # Dapatkan tanggal terakhir sebagai string
                         last_date_str = daily_counts['date_str'].iloc[-1]
+                        
+                        # Konversi ke objek datetime dengan format eksplisit
                         last_date = datetime.strptime(last_date_str, '%Y-%m-%d')
                         
                         # Buat tanggal prediksi
                         future_dates = []
-                        for i in range(1, forecast_days+1):
+                        for i in range(1, forecast_days + 1):
+                            # Gunakan timedelta dari modul datetime
                             next_date = last_date + pd.DateOffset(days=i)
+                            
+                            # Konversi ke string dengan format konsisten
                             future_dates.append(next_date.strftime('%Y-%m-%d'))
                         
                         # Buat proyeksi
@@ -194,6 +208,12 @@ def show(tab):
                         
                     except Exception as e:
                         st.error(f"Terjadi kesalahan dalam membuat proyeksi: {str(e)}")
+                        # Tampilkan informasi debugging
+                        st.error("Informasi Debugging:")
+                        st.error(f"Tipe last_date_str: {type(last_date_str)}")
+                        st.error(f"Nilai last_date_str: {last_date_str}")
+                        if 'last_date' in locals():
+                            st.error(f"Tipe last_date: {type(last_date)}")
         
         except Exception as e:
             st.error(f"Terjadi kesalahan dalam memproses data: {str(e)}")
