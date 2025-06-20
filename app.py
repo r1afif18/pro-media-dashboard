@@ -1,5 +1,6 @@
+import streamlit as st
 from dotenv import load_dotenv
-from components.db import init_app_db
+
 from components.tab_about import show as tab_about
 from components.tab_overview import tab_overview
 from components.tab_upload import tab_upload
@@ -8,7 +9,7 @@ from components.tab_forecasting import tab_forecasting
 from components.tab_insights import tab_insights
 
 load_dotenv()
-init_app_db()
+
 
 st.set_page_config(
     page_title="ProMedia Insight Hub",
