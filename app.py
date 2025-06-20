@@ -1,15 +1,26 @@
-from components.tab_overview import show as show_overview
-from components.tab_upload import show as show_upload
-from components.tab_ai_lab import show as show_ai_lab
-from components.tab_forecasting import show as show_forecasting
-from components.tab_insights import show as show_insights
-from components.tab_about import show as show_about
-# Setup logging
+import logging
+import os
+import sys
+from contextlib import contextmanager
+import streamlit as st
+from dotenv import load_dotenv
+
+# Setup logging harus setelah impor logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
+
+# Impor modul aplikasi SETELAH setup logging
+from auth import login_user, register_user, init_db as init_auth_db
+from database import init_db as init_app_db
+from components.tab_about import show as show_about
+from components.tab_ai_lab import show as show_ai_lab
+from components.tab_forecasting import show as show_forecasting
+from components.tab_insights import show as show_insights
+from components.tab_overview import show as show_overview
+from components.tab_upload import show as show_upload
 
 # Global Exception Handler
 @contextmanager
