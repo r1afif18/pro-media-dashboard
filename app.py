@@ -13,14 +13,17 @@ from components import (
 load_dotenv()
 init_db()
 
-for k, v in {
+# Inisialisasi session state
+session_vars = {
     'df': None,
     'ai_history': [],
     'authenticated': False,
     'user': "",
     'role': "",
     'custom_insights': [],
-}.items():
+}
+
+for k, v in session_vars.items():
     if k not in st.session_state:
         st.session_state[k] = v
 
@@ -30,6 +33,7 @@ def registration_ui():
     new_password = st.text_input("Password Baru", type="password", key="reg_password")
     confirm_password = st.text_input("Konfirmasi Password", type="password", key="reg_confirm")
     user_role = st.selectbox("Peran", ["user", "admin"], index=0, key="reg_role")
+    
     if st.button("Daftarkan Pengguna"):
         if not new_username or not new_password:
             st.error("Username dan password harus diisi")
@@ -46,6 +50,7 @@ def login_ui():
     st.title("Login ProMedia Insight Hub")
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
+    
     if st.button("Login"):
         success, role = login_user(username, password)
         if success:
@@ -57,24 +62,30 @@ def login_ui():
         else:
             st.error("Username atau password salah!")
 
+# Tampilkan UI login jika belum terautentikasi
 if not st.session_state.authenticated:
     st.info("Silakan login terlebih dahulu.")
     login_ui()
     st.stop()
+
+# Tampilkan dashboard jika sudah login
 else:
     with st.sidebar:
         st.success(f"Halo, {st.session_state.user}!")
         st.info("Selamat datang di ProMedia Insight Hub!")
         st.caption(f"Role: {st.session_state.role}")
+        
         if st.session_state.role == "admin":
             with st.expander("🛡️ Admin: Registrasi User Baru"):
                 registration_ui()
+        
         if st.button("Logout"):
             st.session_state.authenticated = False
             st.session_state.user = ""
             st.session_state.role = ""
             st.experimental_rerun()
 
+    # Custom CSS
     st.markdown("""
     <style>
     .header-title {
@@ -93,15 +104,19 @@ else:
     </style>
     """, unsafe_allow_html=True)
 
+    # Header aplikasi
     st.markdown('<h1 class="header-title">📊 ProMedia Insight Hub</h1>', unsafe_allow_html=True)
     st.caption("Dashboard Analisis Media Berbasis AI - Eksplorasi, Insight, dan Visualisasi Data Berita")
 
+    # Buat tab utama
     tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
         "Overview", "Upload Data", "AI Lab", "Forecasting", "Insights", "About"
     ])
-    tab_overview(tab1)
-    tab_upload(tab2)
-    tab_ai_lab(tab3)
-    tab_forecasting(tab4)
-    tab_insights(tab5)
-    tab_about(tab6)
+    
+    # Tampilkan konten tab
+    tab_overview.show(tab1)  # Perhatikan perubahan di sini: tab_overview.show()
+    tab_upload.show(tab2)
+    tab_ai_lab.show(tab3)
+    tab_forecasting.show(tab4)
+    tab_insights.show(tab5)
+    tab_about.show(tab6)
