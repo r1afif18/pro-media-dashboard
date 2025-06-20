@@ -1,8 +1,4 @@
-import os, sys
-print("WORKDIR:", os.getcwd())
-print("sys.path:", sys.path)
-print("DIR app.py:", os.path.dirname(__file__))
-print("LIST components:", os.listdir(os.path.join(os.path.dirname(__file__), "components")))
+from dotenv import load_dotenv
 from components.tab_about import show as tab_about
 from components.tab_overview import tab_overview
 from components.tab_upload import tab_upload
