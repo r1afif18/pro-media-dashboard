@@ -1,26 +1,46 @@
 import streamlit as st
 from datetime import datetime
+from database import save_custom_insight, get_custom_insights, delete_custom_insight
 
-def tab_insights(tab):
+def show(tab):
     with tab:
         st.header("💡 Insights Custom")
-        if 'custom_insights' not in st.session_state:
-            st.session_state.custom_insights = []
-        with st.form("insight_form"):
-            insight_title = st.text_input("Judul Insight*", key="insight_title")
-            insight_content = st.text_area("Deskripsi Insight*", key="insight_content")
+        
+        # Form to create new insight
+        with st.form("insight_form", clear_on_submit=True):
+            st.subheader("Buat Insight Baru")
+            insight_title = st.text_input("Judul Insight*")
+            insight_content = st.text_area("Deskripsi Insight*", height=200)
+            tags = st.text_input("Tags (pisahkan dengan koma)")
+            
             submitted = st.form_submit_button("Simpan Insight")
-            if submitted and insight_title and insight_content:
-                st.session_state.custom_insights.append({
-                    "title": insight_title,
-                    "content": insight_content,
-                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                })
-                st.success("Insight berhasil disimpan!")
-        if st.session_state.custom_insights:
-            st.subheader("Daftar Insight")
-            for insight in reversed(st.session_state.custom_insights):
-                with st.expander(f"{insight['title']} - {insight['timestamp']}"):
-                    st.write(insight['content'])
+            if submitted:
+                if insight_title and insight_content:
+                    # Save to database
+                    save_custom_insight(
+                        title=insight_title,
+                        content=insight_content,
+                        tags=[tag.strip() for tag in tags.split(",")] if tags else []
+                    )
+                    st.success("Insight berhasil disimpan!")
+                else:
+                    st.error("Judul dan deskripsi harus diisi")
+        
+        # Display saved insights
+        st.subheader("Insights Tersimpan")
+        insights = get_custom_insights()
+        
+        if not insights:
+            st.info("Belum ada insight yang disimpan")
         else:
-            st.info("Belum ada insight.")
+            for insight in insights:
+                with st.expander(f"{insight['title']} - {insight['created_at']}"):
+                    st.markdown(f"**{insight['title']}**")
+                    st.write(insight['content'])
+                    
+                    if insight['tags']:
+                        st.caption(f"Tags: {', '.join(insight['tags'])}")
+                    
+                    if st.button("Hapus", key=f"delete_{insight['id']}"):
+                        delete_custom_insight(insight['id'])
+                        st.rerun()
