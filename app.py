@@ -12,6 +12,8 @@ from components import (
 )
 import logging
 import os
+import sys
+from contextlib import contextmanager
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -20,13 +22,26 @@ logger = logging.getLogger(__name__)
 # Load environment variables
 load_dotenv()
 
+# Global Exception Handler
+@contextmanager
+def st_exception_handler():
+    try:
+        yield
+    except Exception as e:
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        logger.error(f"CRITICAL ERROR [{exc_tb.tb_lineno}]: {str(e)}")
+        st.error(f"🚨 Sistem mengalami gangguan: {str(e)}")
+        st.error("Silakan refresh halaman atau hubungi administrator")
+        st.stop()
+
 # Initialize databases
-init_auth_db()  # Initialize authentication database
-init_app_db()   # Initialize application database
+init_auth_db()
+init_app_db()
 
 # Initialize session state
-session_vars = {
+DEFAULT_STATE = {
     'df': None,
+    'data_profile': None,
     'ai_history': [],
     'authenticated': False,
     'user': "",
@@ -35,10 +50,11 @@ session_vars = {
     'google_api_key': os.getenv("GOOGLE_API_KEY", "")
 }
 
-for k, v in session_vars.items():
+for k, v in DEFAULT_STATE.items():
     if k not in st.session_state:
         st.session_state[k] = v
 
+# ========== UI Components ==========
 def registration_ui():
     """UI for user registration (admin only)"""
     with st.expander("🛡️ Admin: Registrasi User Baru", expanded=True):
@@ -48,8 +64,8 @@ def registration_ui():
         user_role = st.selectbox("Peran", ["user", "admin"], index=0, key="reg_role")
         
         if st.button("Daftarkan Pengguna"):
-            if not new_username or not new_password:
-                st.error("Username dan password harus diisi")
+            if len(new_password) < 6:
+                st.error("Password minimal 6 karakter")
             elif new_password != confirm_password:
                 st.error("Password tidak cocok")
             else:
@@ -66,20 +82,22 @@ def login_ui():
     password = st.text_input("Password", type="password")
     
     if st.button("Login"):
-        success, role = login_user(username, password)
-        if success:
-            st.session_state.authenticated = True
-            st.session_state.user = username
-            st.session_state.role = role
-            st.success("Login berhasil!")
-            st.rerun()
-        else:
-            st.error("Username atau password salah!")
+        with st.spinner("Memverifikasi..."):
+            success, role = login_user(username, password)
+            if success:
+                st.session_state.authenticated = True
+                st.session_state.user = username
+                st.session_state.role = role
+                st.success("Login berhasil!")
+                st.rerun()
+            else:
+                st.error("Username atau password salah!")
 
-# Show login UI if not authenticated
+# ========== Main App Flow ==========
 if not st.session_state.authenticated:
     st.info("Silakan login terlebih dahulu.")
-    login_ui()
+    with st_exception_handler():
+        login_ui()
     st.stop()
 
 # Show dashboard if authenticated
@@ -93,32 +111,51 @@ else:
             registration_ui()
         
         if st.button("Logout"):
-            st.session_state.authenticated = False
-            st.session_state.user = ""
-            st.session_state.role = ""
+            for key in list(st.session_state.keys()):
+                if key not in DEFAULT_STATE:
+                    del st.session_state[key]
+            st.session_state.update(DEFAULT_STATE)
             st.rerun()
 
-    # Custom CSS
+    # Enhanced CSS
     st.markdown("""
     <style>
     .header-title {
         font-size: 2.8rem;
-        color: #2563EB;
+        background: linear-gradient(90deg, #2563EB 0%, #7C3AED 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
         text-align: center;
         padding: 0.5rem 0;
-        border-bottom: 3px solid #FF6B6B;
         margin-bottom: 2rem;
+        font-weight: 800;
     }
     .metric-card {
         background-color: #f8f9fa;
         border-radius: 10px;
         padding: 15px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        border-left: 4px solid #2563EB;
+        transition: transform 0.3s;
     }
-    @media (max-width: 768px) {
-        .stDataFrame { width: 100% !important; }
-        .stButton>button { width: 100%; }
-        .header-title { font-size: 2rem; }
+    .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+    }
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 10px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        padding: 10px 20px;
+        border-radius: 8px 8px 0 0;
+        transition: all 0.3s;
+    }
+    .stTabs [aria-selected="true"] {
+        background-color: #2563EB20;
+        font-weight: bold;
+    }
+    .stProgress > div > div > div > div {
+        background-image: linear-gradient(to right, #4f46e5, #7c3aed);
     }
     </style>
     """, unsafe_allow_html=True)
@@ -128,18 +165,16 @@ else:
     st.caption("Dashboard Analisis Media Berbasis AI - Eksplorasi, Insight, dan Visualisasi Data Berita")
 
     # Create main tabs
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
-        "📊 Overview", "📤 Upload Data", "🧠 AI Lab", "🔮 Forecasting", "💡 Insights", "ℹ️ About"
+    tabs = st.tabs([
+        "📊 Overview", "📤 Upload Data", "🧠 AI Lab", "🔮 Forecasting", 
+        "💡 Insights", "ℹ️ About"
     ])
     
-    # Display tab content
-    try:
-        tab_overview(tab1)
-        tab_upload(tab2)
-        tab_ai_lab(tab3)
-        tab_forecasting(tab4)
-        tab_insights(tab5)
-        tab_about(tab6)
-    except Exception as e:
-        st.error(f"Terjadi kesalahan: {str(e)}")
-        logger.error(f"Error in tab navigation: {str(e)}")
+    # Display tab content with global error handling
+    with st_exception_handler():
+        tab_overview.show(tabs[0])
+        tab_upload.show(tabs[1])
+        tab_ai_lab.show(tabs[2])
+        tab_forecasting.show(tabs[3])
+        tab_insights.show(tabs[4])
+        tab_about.show(tabs[5])
