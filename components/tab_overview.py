@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 from analytics import deep_sentiment_analysis, topic_modeling, source_network_analysis
 
-def show():
+def tab_overview():
     st.header("📊 Overview")
     
     if 'df' not in st.session_state or st.session_state.df is None:
@@ -22,7 +22,7 @@ def show():
     
     # Tren temporal
     st.subheader("Tren Jumlah Berita per Hari")
-    df['date_only'] = df['date'].dt.date
+    df['date_only'] = pd.to_datetime(df['date']).dt.date
     daily_counts = df.groupby('date_only').size().reset_index(name='count')
     fig = px.line(daily_counts, x='date_only', y='count', 
                   title='Tren Jumlah Berita Harian',
@@ -41,13 +41,13 @@ def show():
     # Top sumber berita
     st.subheader("Top 10 Sumber Berita")
     top_sources = df['source'].value_counts().head(10).reset_index()
+    top_sources.columns = ['source', 'count']
     fig3 = px.bar(top_sources, x='source', y='count', 
                  title='Sumber Berita Terbanyak',
-                 labels={'source': 'Sumber Berita', 'count': 'Jumlah Berita'},
-                 color='count')
+                 labels={'source': 'Sumber Berita', 'count': 'Jumlah Berita'})
     st.plotly_chart(fig3, use_container_width=True)
     
-    st.divider()  # <-- INI YANG DIPERBAIKI (sekarang 4 spasi)
+    st.divider()
     st.subheader("Analisis Lanjutan")
     
     tab1, tab2, tab3 = st.tabs([
@@ -63,7 +63,6 @@ def show():
                 df_analyzed = deep_sentiment_analysis(st.session_state.df)
                 st.session_state.df = df_analyzed
                 st.success("Analisis sentimen selesai!")
-                
                 st.subheader("Distribusi Sentimen Baru")
                 sentiment_counts = df_analyzed['sentiment_category'].value_counts()
                 st.bar_chart(sentiment_counts)
