@@ -2,6 +2,7 @@ import streamlit as st
 from gemini_engine import gemini_engine
 from database import save_ai_history, get_ai_history
 import logging
+import utils
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
