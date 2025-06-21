@@ -69,15 +69,26 @@ def show(tab):
                 font-weight: 500;
                 color: #1e3a8a;
             }
+            .tech-tag-container {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+                margin-top: 1.5rem;
+            }
             .tech-tag {
                 display: inline-block;
                 background: #e0f2fe;
                 color: #0369a1;
-                padding: 0.4rem 1rem;
+                padding: 0.5rem 1.2rem;
                 border-radius: 20px;
-                margin: 0.3rem;
                 font-weight: 500;
                 box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+                transition: all 0.2s ease;
+            }
+            .tech-tag:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                background: #bae6fd;
             }
             .team-grid {
                 display: grid;
@@ -110,13 +121,22 @@ def show(tab):
                 background: #f8fafc;
                 border-radius: 12px;
             }
-            ul {
+            .platform-overview ul {
                 padding-left: 1.5rem;
                 margin-top: 0.8rem;
             }
-            li {
+            .platform-overview li {
                 margin-bottom: 0.6rem;
                 line-height: 1.6;
+                position: relative;
+            }
+            .platform-overview li:before {
+                content: "•";
+                color: #1e3a8a;
+                font-weight: bold;
+                display: inline-block; 
+                width: 1em;
+                margin-left: -1em;
             }
         </style>
         """, unsafe_allow_html=True)
@@ -129,9 +149,9 @@ def show(tab):
         </div>
         """, unsafe_allow_html=True)
         
-        # Platform Overview
+        # Platform Overview - PERBAIKAN DI SINI
         st.markdown("""
-        <div class="about-card">
+        <div class="about-card platform-overview">
             <div class="card-title">📊 Platform Overview</div>
             <p><strong>ProMedia Insight Hub</strong> adalah platform analitik media profesional yang dirancang untuk membantu organisasi:</p>
             
@@ -174,13 +194,13 @@ def show(tab):
         </div>
         """, unsafe_allow_html=True)
         
-        # Technology Stack
+        # Technology Stack - PERBAIKAN DI SINI
         st.markdown("""
         <div class="about-card">
             <div class="card-title">🛠️ Technology Stack</div>
             <p>Aplikasi ini dibangun dengan teknologi terkini:</p>
             
-            <div style="margin-top: 1.5rem;">
+            <div class="tech-tag-container">
                 <span class="tech-tag">Python</span>
                 <span class="tech-tag">Streamlit</span>
                 <span class="tech-tag">Google Gemini AI</span>
