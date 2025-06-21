@@ -127,55 +127,54 @@ def show(tab):
         </div>
         """, unsafe_allow_html=True)
 
-       # ===== TECHNOLOGY STACK =====
-st.markdown("""
-<div class="about-card">
-    <div class="card-title">🛠️ Technology Stack</div>
-    <p><b>Bahasa & Framework:</b></p>
-    <div class="tech-tag-container">
-        <span class="tech-tag">Python</span>
-        <span class="tech-tag">Streamlit</span>
-        <span class="tech-tag">HTML & CSS</span>
-    </div>
-    <p style="margin-top:1rem;"><b>Data Science & Analytics:</b></p>
-    <div class="tech-tag-container">
-        <span class="tech-tag">pandas</span>
-        <span class="tech-tag">numpy</span>
-        <span class="tech-tag">plotly</span>
-        <span class="tech-tag">matplotlib</span>
-        <span class="tech-tag">openpyxl</span>
-        <span class="tech-tag">networkx</span>
-        <span class="tech-tag">scikit-learn</span>
-        <span class="tech-tag">statsmodels</span>
-        <span class="tech-tag">tabulate</span>
-        <span class="tech-tag">fpdf2</span>
-    </div>
-    <p style="margin-top:1rem;"><b>AI & ML Integration:</b></p>
-    <div class="tech-tag-container">
-        <span class="tech-tag">google-generativeai</span>
-        <span class="tech-tag">textblob</span>
-        <span class="tech-tag">OpenAI API</span>
-        <span class="tech-tag">NLP</span>
-        <span class="tech-tag">Machine Learning</span>
-    </div>
-    <p style="margin-top:1rem;"><b>Database & Auth:</b></p>
-    <div class="tech-tag-container">
-        <span class="tech-tag">SQLite</span>
-        <span class="tech-tag">sqlite3</span>
-        <span class="tech-tag">sqlalchemy</span>
-        <span class="tech-tag">streamlit-authenticator</span>
-        <span class="tech-tag">hashlib</span>
-    </div>
-    <p style="margin-top:1rem;"><b>Environment & Deployment:</b></p>
-    <div class="tech-tag-container">
-        <span class="tech-tag">Docker</span>
-        <span class="tech-tag">docker-compose</span>
-        <span class="tech-tag">python-dotenv</span>
-        <span class="tech-tag">Devcontainer</span>
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
+        # ===== TECHNOLOGY STACK =====
+        st.markdown("""
+        <div class="about-card">
+            <div class="card-title">🛠️ Technology Stack</div>
+            <p><b>Bahasa & Framework:</b></p>
+            <div class="tech-tag-container">
+                <span class="tech-tag">Python</span>
+                <span class="tech-tag">Streamlit</span>
+                <span class="tech-tag">HTML & CSS</span>
+            </div>
+            <p style="margin-top:1rem;"><b>Data Science & Analytics:</b></p>
+            <div class="tech-tag-container">
+                <span class="tech-tag">pandas</span>
+                <span class="tech-tag">numpy</span>
+                <span class="tech-tag">plotly</span>
+                <span class="tech-tag">matplotlib</span>
+                <span class="tech-tag">openpyxl</span>
+                <span class="tech-tag">networkx</span>
+                <span class="tech-tag">scikit-learn</span>
+                <span class="tech-tag">statsmodels</span>
+                <span class="tech-tag">tabulate</span>
+                <span class="tech-tag">fpdf2</span>
+            </div>
+            <p style="margin-top:1rem;"><b>AI & ML Integration:</b></p>
+            <div class="tech-tag-container">
+                <span class="tech-tag">google-generativeai</span>
+                <span class="tech-tag">textblob</span>
+                <span class="tech-tag">OpenAI API</span>
+                <span class="tech-tag">NLP</span>
+                <span class="tech-tag">Machine Learning</span>
+            </div>
+            <p style="margin-top:1rem;"><b>Database & Auth:</b></p>
+            <div class="tech-tag-container">
+                <span class="tech-tag">SQLite</span>
+                <span class="tech-tag">sqlite3</span>
+                <span class="tech-tag">sqlalchemy</span>
+                <span class="tech-tag">streamlit-authenticator</span>
+                <span class="tech-tag">hashlib</span>
+            </div>
+            <p style="margin-top:1rem;"><b>Environment & Deployment:</b></p>
+            <div class="tech-tag-container">
+                <span class="tech-tag">Docker</span>
+                <span class="tech-tag">docker-compose</span>
+                <span class="tech-tag">python-dotenv</span>
+                <span class="tech-tag">Devcontainer</span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
         # ===== DEVELOPER =====
         st.markdown("""
