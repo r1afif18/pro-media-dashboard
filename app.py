@@ -12,6 +12,7 @@ from components.tab_overview import show as show_overview
 from components.tab_upload import show as show_upload
 from components.tab_ai_lab import show as show_ai_lab
 from components.tab_insights import show as show_insights
+from components.tab_forecasting import show as show_forecasting
 from components.tab_about import show as show_about
 
 # Setup logging
