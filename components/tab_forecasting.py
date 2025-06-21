@@ -4,13 +4,25 @@ import numpy as np
 import plotly.express as px
 from gemini_engine import gemini_engine
 import logging
+import io
+import re
 
 logger = logging.getLogger(__name__)
+
+def extract_markdown_table(text):
+    # Ambil bagian tabel markdown dari respons AI
+    match = re.search(r'(\|.*\|\n\|[-\s|]+\|\n[\s\S]+?)(\n\n|$)', text)
+    if match:
+        return match.group(1)
+    else:
+        # Jika tidak ada tabel, hapus blok kode python atau blok triple-backtick
+        text_no_code = re.sub(r'```[\s\S]+?```', '', text)
+        return text_no_code.strip()
 
 def show(tab):
     with tab:
         st.header("🔮 AI Forecasting & Strategi - Analisis Tren Berita")
-        st.info("Forecasting di sini menggunakan Google Gemini AI untuk memproyeksikan tren masa depan dari data historis!")
+        st.info("Forecasting menggunakan Google Gemini AI untuk memproyeksikan tren masa depan dari data historis. Data minimum: 10 baris.")
 
         if 'df' not in st.session_state or st.session_state.df is None:
             st.warning("📤 Silakan upload data terlebih dahulu di tab 'Upload Data'")
@@ -40,13 +52,11 @@ def show(tab):
             time_window = st.selectbox("Rentang Waktu", ["Harian", "Mingguan", "Bulanan"])
             forecast_periods = st.slider("Jumlah Periode ke Depan", 1, 14, 7)
 
-        # Proses & visualisasi data historis
         try:
             df_clean = df.copy()
             df_clean[date_column] = pd.to_datetime(df_clean[date_column], errors='coerce')
             df_clean = df_clean.dropna(subset=[date_column])
 
-            # Generate period column
             if time_window == "Harian":
                 df_clean['period'] = df_clean[date_column].dt.normalize()
                 freq = 'D'
@@ -81,64 +91,25 @@ def show(tab):
                 )
             st.plotly_chart(fig_hist, use_container_width=True)
 
-            # Forecasting dengan AI
-            st.subheader("🔮 Proyeksi Masa Depan (AI)")
-            st.info("Forecast dihasilkan otomatis oleh Gemini AI, berbasis data historis.")
+            # ====== AI Forecast (Hanya Jika Data Cukup) ======
+            MIN_HISTORICAL_ROWS = 10
+            if len(df_agg) < MIN_HISTORICAL_ROWS:
+                st.warning(f"Data historis terlalu sedikit untuk prediksi AI. Minimal upload {MIN_HISTORICAL_ROWS} baris data agar hasil lebih bermakna.")
+                return
 
-            # Build prompt data ringkas (biar AI tidak overload token)
-            ringkas = df_agg[[ 'period', metric_column ]].copy()
+            st.subheader("🔮 Proyeksi Masa Depan (AI)")
+            st.info("Forecast dihasilkan otomatis oleh Gemini AI. Hasil prediksi hanya berupa tabel (tanpa kode python).")
+
+            ringkas = df_agg[['period', metric_column]].copy()
             ringkas['period'] = ringkas['period'].astype(str)
             data_table = ringkas.tail(30).to_csv(index=False)
 
             prompt = f"""
-Data berikut adalah tren '{metric_column}' dari dataset media. 
-Kolom 'period' menyatakan tanggal, '{metric_column}' adalah nilainya.
+Data berikut adalah tren '{metric_column}' dari dataset media.
+Kolom 'period' = tanggal, '{metric_column}' = nilainya.
 
-Tampilkan prediksi {forecast_periods} periode ke depan ({time_window.lower()}), 
-berikan nilai estimasi tiap periode dalam bentuk tabel.
-- Kolom: periode_prediksi, nilai_prediksi
-- Prediksi berbasis pola historis data.
-- Hanya tampilkan tabel tanpa penjelasan narasi.
-- Periode awal proyeksi = setelah data terakhir berikut:
+Tampilkan prediksi {forecast_periods} periode ke depan ({time_window.lower()}):
+- Jawab HANYA dalam bentuk tabel markdown tanpa kode python, tanpa narasi tambahan.
+- Kolom tabel: periode_prediksi, nilai_prediksi.
+- Periode awal prediksi = setelah data terakhir berikut:
 
-{data_table}
-            
-             """
-
-            if st.button("Buat Prediksi AI", use_container_width=True):
-                with st.spinner("Meminta prediksi ke Google Gemini..."):
-                    result = gemini_engine.ask(prompt, df_agg)
-                    # Gemini akan membalas tabel markdown, konversi ke DataFrame jika bisa
-                    # Coba auto-parse markdown tabel
-                    import re
-                    import io
-
-                    # Ambil tabel markdown saja dari result
-                    md_table = None
-                    match = re.search(r"\|.*\|\n\|[-\s|]+\|\n([\s\S]+?)\n\n", result)
-                    if match:
-                        md_table = "|periode_prediksi|nilai_prediksi|\n|---|---|\n" + match.group(1)
-                    else:
-                        md_table = result
-
-                    try:
-                        st.dataframe(df_pred, use_container_width=True)
-                        # Plot proyeksi AI
-                        if 'periode_prediksi' in df_pred.columns and 'nilai_prediksi' in df_pred.columns:
-                            st.line_chart(
-                                df_pred.set_index('periode_prediksi')['nilai_prediksi']
-                            )
-                    except Exception:
-                        st.markdown(result)
-
-                    # AI STRATEGY RECOMMENDATION
-                    st.subheader("💡 Rekomendasi Strategi oleh AI")
-                    prompt2 = f"""
-Berdasarkan data historis dan hasil proyeksi AI, berikan saran singkat (maks 5 poin) strategi untuk manajemen dan distribusi konten media, berbasis tren {metric_column} ke depan.
-"""
-                    rekomendasi = gemini_engine.ask(prompt2, df_agg)
-                    st.markdown(rekomendasi)
-
-        except Exception as e:
-            st.error("⚠️ Terjadi kesalahan dalam analisis: {}".format(str(e)))
-            logger.exception("Forecasting error")
