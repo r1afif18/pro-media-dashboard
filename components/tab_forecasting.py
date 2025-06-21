@@ -11,14 +11,14 @@ logger = logging.getLogger(__name__)
 def show(tab):
     with tab:
         st.header("🔮 Forecasting & Strategi - Analisis Tren Berita")
-st.info(
-    """
-    Tab ini memungkinkan Anda memproyeksikan tren jumlah dan sentimen berita ke depan menggunakan metode statistik (Moving Average & Linear Regression) berbasis data historis yang telah diupload.  
-    Hasil prediksi dapat digunakan untuk mengantisipasi perubahan tren, mengambil keputusan strategis, serta mendapatkan insight otomatis dari AI (Gemini).
+        st.info(
+        """
+        Tab ini memungkinkan Anda memproyeksikan tren jumlah dan sentimen berita ke depan menggunakan metode statistik (Moving Average & Linear Regression) berbasis data historis yang telah diupload.  
+        Hasil prediksi dapat digunakan untuk mengantisipasi perubahan tren, mengambil keputusan strategis, serta mendapatkan insight otomatis dari AI (Gemini).
     
-    Pastikan data sudah lengkap dan terstruktur agar hasil prediksi lebih akurat.
-    """
-)
+        Pastikan data sudah lengkap dan terstruktur agar hasil prediksi lebih akurat.
+        """
+        )
 
         if 'df' not in st.session_state or st.session_state.df is None:
             st.warning("📤 Silakan upload data terlebih dahulu di tab 'Upload Data'")
