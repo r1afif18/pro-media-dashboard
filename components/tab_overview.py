@@ -12,7 +12,6 @@ def show(tab):
         </div>
         """, unsafe_allow_html=True)
         
-        # ==== Data Cek ====
         if 'df' not in st.session_state or st.session_state.df is None:
             st.markdown("""
             <div class="card">
@@ -25,78 +24,118 @@ def show(tab):
         df = st.session_state.df.copy()
         profile = st.session_state.get('data_profile', utils.generate_data_profile(df))
 
-        # ==== Key Metrics with Soft Background ====
+        # ==== KEY METRICS CARD FLEX GRID ====
         st.markdown("""
-        <div class="section">
+        <div class="section" style="margin-bottom: 1.5rem;">
             <h3 class="section-title">📈 Key Metrics</h3>
-            <div class="metric-grid" style="margin-top:1.3rem;">
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:24px 14px;align-items:stretch;margin-bottom:30px;">
         """, unsafe_allow_html=True)
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            growth = (df.shape[0] - profile.get('n_news_prev', 0)) / (profile.get('n_news_prev', 1) or 1) * 100
-            st.markdown(f"""
-            <div class="metric-card" style="background:#f4f6fb;border-left:5px solid #1a3c6e;box-shadow:0 4px 18px 0 #e2e8f0;">
-                <div class="metric-value">{len(df)}</div>
-                <div class="metric-label">Total Berita</div>
-                <div class="metric-insight" style="color:#43aa8b; font-size:13px;">
-                    {'↑' if growth>=0 else '↓'} {abs(growth):.1f}% dibanding periode sebelumnya
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-        with col2:
-            total_source = df['source'].nunique() if 'source' in df.columns else "N/A"
-            st.markdown(f"""
-            <div class="metric-card" style="background:#f4f6fb;border-left:5px solid #4a6fa5;box-shadow:0 4px 18px 0 #e2e8f0;">
-                <div class="metric-value">{total_source}</div>
-                <div class="metric-label">Sumber Berita</div>
-            </div>
-            """, unsafe_allow_html=True)
-        with col3:
-            if 'date' in df.columns:
-                min_date = df['date'].min().strftime('%d %b %Y')
-                max_date = df['date'].max().strftime('%d %b %Y')
-                date_range = f"{min_date} - {max_date}"
-            else:
-                date_range = "N/A"
-            st.markdown(f"""
-            <div class="metric-card" style="background:#f4f6fb;border-left:5px solid #d4a76a;box-shadow:0 4px 18px 0 #e2e8f0;">
-                <div class="metric-value">{date_range}</div>
-                <div class="metric-label">Rentang Tanggal</div>
-            </div>
-            """, unsafe_allow_html=True)
-        with col4:
-            if 'sentiment' in df.columns:
-                sentiment_counts = df['sentiment'].value_counts()
-                dominant_sentiment = sentiment_counts.idxmax()
-                color = "#1a3c6e" if dominant_sentiment == "Positif" else "#e74c3c"
-            else:
-                dominant_sentiment = "N/A"
-                color = "#888"
-            st.markdown(f"""
-            <div class="metric-card" style="background:#f4f6fb;border-left:5px solid {color};box-shadow:0 4px 18px 0 #e2e8f0;">
-                <div class="metric-value">{dominant_sentiment}</div>
-                <div class="metric-label">Sentimen Dominan</div>
-            </div>
-            """, unsafe_allow_html=True)
-        st.markdown("</div></div>", unsafe_allow_html=True)
 
-        # ==== Hari Teraktif Card ====
+        growth = (df.shape[0] - profile.get('n_news_prev', 0)) / (profile.get('n_news_prev', 1) or 1) * 100
+        st.markdown(f"""
+        <div class="metric-card" style="
+            background: #eef2fa;
+            border-left:5px solid #1a3c6e;
+            box-shadow:0 8px 24px 0 #d1dbec3d;
+            border-radius: 16px;
+            min-width: 180px;
+            max-width: 220px;
+            padding: 1.45rem 1.1rem 1.25rem 1.25rem;
+            margin-bottom: 0.7rem;
+            display: flex; flex-direction:column; justify-content:center;
+        ">
+            <div class="metric-value" style="font-size:2.15rem;font-weight:700;">{len(df)}</div>
+            <div class="metric-label" style="font-size:1.02rem;">Total Berita</div>
+            <div class="metric-insight" style="color:#43aa8b; font-size:13px;margin-top:5px;">
+                {'↑' if growth>=0 else '↓'} {abs(growth):.1f}% dibanding periode sebelumnya
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        total_source = df['source'].nunique() if 'source' in df.columns else "N/A"
+        st.markdown(f"""
+        <div class="metric-card" style="
+            background: #eef2fa;
+            border-left:5px solid #4a6fa5;
+            box-shadow:0 8px 24px 0 #d1dbec3d;
+            border-radius: 16px;
+            min-width: 180px;
+            max-width: 220px;
+            padding: 1.45rem 1.1rem 1.25rem 1.25rem;
+            margin-bottom: 0.7rem;
+            display: flex; flex-direction:column; justify-content:center;
+        ">
+            <div class="metric-value" style="font-size:2.15rem;font-weight:700;">{total_source}</div>
+            <div class="metric-label" style="font-size:1.02rem;">Sumber Berita</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if 'date' in df.columns:
+            min_date = df['date'].min().strftime('%d %b %Y')
+            max_date = df['date'].max().strftime('%d %b %Y')
+            date_range = f"{min_date} - {max_date}"
+        else:
+            date_range = "N/A"
+        st.markdown(f"""
+        <div class="metric-card" style="
+            background: #eef2fa;
+            border-left:5px solid #d4a76a;
+            box-shadow:0 8px 24px 0 #d1dbec3d;
+            border-radius: 16px;
+            min-width: 180px;
+            max-width: 220px;
+            padding: 1.45rem 1.1rem 1.25rem 1.25rem;
+            margin-bottom: 0.7rem;
+            display: flex; flex-direction:column; justify-content:center;
+        ">
+            <div class="metric-value" style="font-size:1.11rem;font-weight:600;">{date_range}</div>
+            <div class="metric-label" style="font-size:1.02rem;">Rentang Tanggal</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if 'sentiment' in df.columns:
+            sentiment_counts = df['sentiment'].value_counts()
+            dominant_sentiment = sentiment_counts.idxmax()
+            color = "#1a3c6e" if dominant_sentiment == "Positif" else "#e74c3c"
+        else:
+            dominant_sentiment = "N/A"
+            color = "#e74c3c"
+        st.markdown(f"""
+        <div class="metric-card" style="
+            background: #eef2fa;
+            border-left:5px solid {color};
+            box-shadow:0 8px 24px 0 #d1dbec3d;
+            border-radius: 16px;
+            min-width: 180px;
+            max-width: 220px;
+            padding: 1.45rem 1.1rem 1.25rem 1.25rem;
+            margin-bottom: 0.7rem;
+            display: flex; flex-direction:column; justify-content:center;
+        ">
+            <div class="metric-value" style="font-size:2rem;font-weight:600;">{dominant_sentiment}</div>
+            <div class="metric-label" style="font-size:1.02rem;">Sentimen Dominan</div>
+        </div>
+        """, unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True) # tutup grid
+
+        # ==== HARI TERAKTIF CARD ====
         st.markdown("""
         <div class="section" style="margin-top:2rem;">
-            <div class="card" style="background:#f3f7fa;border-left:5px solid #43aa8b;">
+            <div class="card" style="background:#f3f7fa;border-left:5px solid #43aa8b;box-shadow:0 3px 14px 0 #d1dbec24;">
                 <b>🔥 Hari Teraktif:</b>
         """, unsafe_allow_html=True)
         if 'date' in df.columns:
             busiest_day = df['date'].dt.date.value_counts().idxmax()
             count_busiest = df['date'].dt.date.value_counts().max()
-            st.markdown(f"""<span style="font-size:1.1rem;">{busiest_day} — {count_busiest} berita</span>""", unsafe_allow_html=True)
+            st.markdown(f"""<span style="font-size:1.13rem;">{busiest_day} — {count_busiest} berita</span>""", unsafe_allow_html=True)
         st.markdown("</div></div>", unsafe_allow_html=True)
 
-        # ==== News Trend Card ====
+        # ==== NEWS TREND ====
         st.markdown("""
-        <div class="section">
+        <div class="section" style="margin-top: 1.3rem;">
             <h3 class="section-title">📈 News Trend</h3>
-            <div class="card" style="background:#f5f7fa;">
+            <div class="card" style="background:#f5f7fa;box-shadow:0 3px 14px 0 #d1dbec24;">
                 <div class="card-title">Trend Analysis</div>
         """, unsafe_allow_html=True)
         if 'date' in df.columns:
@@ -113,8 +152,8 @@ def show(tab):
                 )
                 fig.update_traces(mode='lines+markers')
                 fig.update_layout(
-                    plot_bgcolor='#f4f6fb',
-                    paper_bgcolor='#f4f6fb',
+                    plot_bgcolor='#f5f7fa',
+                    paper_bgcolor='#f5f7fa',
                     xaxis=dict(showgrid=False),
                     yaxis=dict(showgrid=True, gridcolor='#f0f0f0')
                 )
@@ -125,11 +164,11 @@ def show(tab):
             st.info("Date column not available for trend analysis")
         st.markdown("</div></div>", unsafe_allow_html=True)
 
-        # ==== Sentiment Pie Card ====
+        # ==== SENTIMENT PIE CARD ====
         st.markdown("""
-        <div class="section">
+        <div class="section" style="margin-top: 1.3rem;">
             <h3 class="section-title">😊 Sentiment Analysis</h3>
-            <div class="card" style="background:#f5f7fa;">
+            <div class="card" style="background:#f5f7fa;box-shadow:0 3px 14px 0 #d1dbec24;">
                 <div class="card-title">Sentiment Distribution</div>
         """, unsafe_allow_html=True)
         if 'sentiment' in df.columns:
@@ -152,11 +191,11 @@ def show(tab):
             st.info("Sentiment column not available")
         st.markdown("</div></div>", unsafe_allow_html=True)
 
-        # ==== Top Sources Card ====
+        # ==== TOP SOURCES CARD ====
         st.markdown("""
-        <div class="section">
+        <div class="section" style="margin-top: 1.3rem;">
             <h3 class="section-title">📰 News Sources</h3>
-            <div class="card" style="background:#f5f7fa;">
+            <div class="card" style="background:#f5f7fa;box-shadow:0 3px 14px 0 #d1dbec24;">
                 <div class="card-title">Top News Sources</div>
         """, unsafe_allow_html=True)
         if 'source' in df.columns:
