@@ -21,7 +21,7 @@ def show(tab):
             .dev-links { display: flex; gap: 1.3rem; margin-top: 0.44rem;}
             .dev-link { color: #1a3c6e; font-weight: 500; font-size: 1.01rem; text-decoration: none; background: #e8f1fb; padding: 0.41rem 1.03rem; border-radius: 19px; border: 1px solid #b2c5df;}
             .dev-link:hover { background: #e0eaff; color: #356aad;}
-            .dev-email {margin-top:0.45rem;font-size:1.01rem; color:#444; background:#f3f7fa; padding:0.49rem 1.18rem; border-radius:22px; border:1px solid #e3e8ee;}
+            .dev-email {margin-top:0.45rem;font-size:1.01rem; color:#1a3c6e; background:#f3f7fa; padding:0.49rem 1.18rem; border-radius:22px; border:1px solid #e3e8ee; text-decoration:none; display:inline-block;}
             .footer { text-align: center; padding: 1.08rem 1.1rem 1.1rem 1.2rem; color: #64748b; font-size: 0.93rem; margin-top: 1.1rem; background: #f8fafc; border-radius: 13px; border: 1px solid #e2e8f0;}
             .platform-overview ul { padding-left: 1.55rem; margin-top: 0.88rem;}
             .platform-overview li { margin-bottom: 0.56rem; line-height: 1.6; position: relative;}
@@ -127,48 +127,55 @@ def show(tab):
         </div>
         """, unsafe_allow_html=True)
 
-        # ===== TECHNOLOGY STACK =====
-        st.markdown("""
-        <div class="about-card">
-            <div class="card-title">🛠️ Technology Stack</div>
-            <p><b>Backend & Data Analysis:</b></p>
-            <div class="tech-tag-container">
-                <span class="tech-tag">Python</span>
-                <span class="tech-tag">pandas</span>
-                <span class="tech-tag">numpy</span>
-                <span class="tech-tag">scikit-learn</span>
-                <span class="tech-tag">statsmodels</span>
-                <span class="tech-tag">textblob</span>
-                <span class="tech-tag">openpyxl</span>
-                <span class="tech-tag">tabulate</span>
-                <span class="tech-tag">sqlalchemy</span>
-                <span class="tech-tag">python-dotenv</span>
-                <span class="tech-tag">fpdf2</span>
-            </div>
-            <p style="margin-top:1rem;"><b>Frontend & Dashboard:</b></p>
-            <div class="tech-tag-container">
-                <span class="tech-tag">Streamlit</span>
-                <span class="tech-tag">plotly</span>
-                <span class="tech-tag">matplotlib</span>
-                <span class="tech-tag">networkx</span>
-                <span class="tech-tag">streamlit-authenticator</span>
-            </div>
-            <p style="margin-top:1rem;"><b>AI & ML Integration:</b></p>
-            <div class="tech-tag-container">
-                <span class="tech-tag">google-generativeai</span>
-                <span class="tech-tag">OpenAI API</span>
-                <span class="tech-tag">NLP</span>
-                <span class="tech-tag">Machine Learning</span>
-            </div>
-            <p style="margin-top:1rem;"><b>DevOps & Deployment:</b></p>
-            <div class="tech-tag-container">
-                <span class="tech-tag">Docker</span>
-                <span class="tech-tag">docker-compose</span>
-                <span class="tech-tag">.env config</span>
-                <span class="tech-tag">SQLite</span>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+       # ===== TECHNOLOGY STACK =====
+st.markdown("""
+<div class="about-card">
+    <div class="card-title">🛠️ Technology Stack</div>
+    <p><b>Bahasa & Framework:</b></p>
+    <div class="tech-tag-container">
+        <span class="tech-tag">Python</span>
+        <span class="tech-tag">Streamlit</span>
+        <span class="tech-tag">HTML & CSS</span>
+    </div>
+    <p style="margin-top:1rem;"><b>Data Science & Analytics:</b></p>
+    <div class="tech-tag-container">
+        <span class="tech-tag">pandas</span>
+        <span class="tech-tag">numpy</span>
+        <span class="tech-tag">plotly</span>
+        <span class="tech-tag">matplotlib</span>
+        <span class="tech-tag">openpyxl</span>
+        <span class="tech-tag">networkx</span>
+        <span class="tech-tag">scikit-learn</span>
+        <span class="tech-tag">statsmodels</span>
+        <span class="tech-tag">tabulate</span>
+        <span class="tech-tag">fpdf2</span>
+    </div>
+    <p style="margin-top:1rem;"><b>AI & ML Integration:</b></p>
+    <div class="tech-tag-container">
+        <span class="tech-tag">google-generativeai</span>
+        <span class="tech-tag">textblob</span>
+        <span class="tech-tag">OpenAI API</span>
+        <span class="tech-tag">NLP</span>
+        <span class="tech-tag">Machine Learning</span>
+    </div>
+    <p style="margin-top:1rem;"><b>Database & Auth:</b></p>
+    <div class="tech-tag-container">
+        <span class="tech-tag">SQLite</span>
+        <span class="tech-tag">sqlite3</span>
+        <span class="tech-tag">sqlalchemy</span>
+        <span class="tech-tag">streamlit-authenticator</span>
+        <span class="tech-tag">hashlib</span>
+    </div>
+    <p style="margin-top:1rem;"><b>Environment & Deployment:</b></p>
+    <div class="tech-tag-container">
+        <span class="tech-tag">Docker</span>
+        <span class="tech-tag">docker-compose</span>
+        <span class="tech-tag">python-dotenv</span>
+        <span class="tech-tag">Devcontainer</span>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
 
         # ===== DEVELOPER =====
         st.markdown("""
@@ -181,10 +188,10 @@ def show(tab):
                     <a class="dev-link" href="https://github.com/r1afif18/pro-media-dashboard" target="_blank">GitHub Repo</a>
                     <a class="dev-link" href="https://www.linkedin.com/in/rafifsudanta/" target="_blank">LinkedIn</a>
                 </div>
-                <div class="dev-email">📧 rafifsudanta1@gmail.com</div>
+                <a class="dev-email" href="mailto:rafifsudanta1@gmail.com">📧 rafifsudanta1@gmail.com</a>
             </div>
             <div style="margin-top:1rem;font-size:0.99rem;color:#4b5563;text-align:center;">
-                Untuk kolaborasi, magang, atau konsultasi dashboard & AI, silakan hubungi saya via LinkedIn atau email.
+                Untuk kolaborasi, proyek bersama, atau konsultasi dashboard & AI, silakan hubungi saya via LinkedIn atau email.
             </div>
         </div>
         """, unsafe_allow_html=True)
