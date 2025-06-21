@@ -195,6 +195,6 @@ Developed by **Rafif Sudanta**
 
 ## 📝 License
 
-MIT License — Free to use & develop for education, portfolios, research, or organizational needs.
+MIT License 
 
 ---
