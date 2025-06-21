@@ -2,27 +2,16 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
+from sklearn.linear_model import LinearRegression
 from gemini_engine import gemini_engine
 import logging
-import io
-import re
 
 logger = logging.getLogger(__name__)
 
-def extract_markdown_table(text):
-    # Ambil bagian tabel markdown dari respons AI
-    match = re.search(r'(\|.*\|\n\|[-\s|]+\|\n[\s\S]+?)(\n\n|$)', text)
-    if match:
-        return match.group(1)
-    else:
-        # Jika tidak ada tabel, hapus blok kode python atau blok triple-backtick
-        text_no_code = re.sub(r'```[\s\S]+?```', '', text)
-        return text_no_code.strip()
-
 def show(tab):
     with tab:
-        st.header("🔮 AI Forecasting & Strategi - Analisis Tren Berita")
-        st.info("Forecasting menggunakan Google Gemini AI untuk memproyeksikan tren masa depan dari data historis. Data minimum: 10 baris.")
+        st.header("🔮 Forecasting & Strategi - Analisis Tren Berita")
+        st.info("Forecasting anti error: tersedia Moving Average & Linear Regression. Insight strategi tetap menggunakan Gemini AI.")
 
         if 'df' not in st.session_state or st.session_state.df is None:
             st.warning("📤 Silakan upload data terlebih dahulu di tab 'Upload Data'")
@@ -51,6 +40,7 @@ def show(tab):
             category_column = st.selectbox("Kelompokkan Berdasarkan (opsional)", category_cols)
             time_window = st.selectbox("Rentang Waktu", ["Harian", "Mingguan", "Bulanan"])
             forecast_periods = st.slider("Jumlah Periode ke Depan", 1, 14, 7)
+            method = st.selectbox("Metode Forecasting", ["Moving Average", "Linear Regression"])
 
         try:
             df_clean = df.copy()
@@ -91,25 +81,74 @@ def show(tab):
                 )
             st.plotly_chart(fig_hist, use_container_width=True)
 
-            # ====== AI Forecast (Hanya Jika Data Cukup) ======
-            MIN_HISTORICAL_ROWS = 10
+            MIN_HISTORICAL_ROWS = 8
             if len(df_agg) < MIN_HISTORICAL_ROWS:
-                st.warning(f"Data historis terlalu sedikit untuk prediksi AI. Minimal upload {MIN_HISTORICAL_ROWS} baris data agar hasil lebih bermakna.")
+                st.warning(f"Data historis terlalu sedikit untuk forecast. Minimal upload {MIN_HISTORICAL_ROWS} baris data.")
                 return
 
-            st.subheader("🔮 Proyeksi Masa Depan (AI)")
-            st.info("Forecast dihasilkan otomatis oleh Gemini AI. Hasil prediksi hanya berupa tabel (tanpa kode python).")
+            st.subheader("🔮 Proyeksi Masa Depan (Non-AI)")
 
-            ringkas = df_agg[['period', metric_column]].copy()
-            ringkas['period'] = ringkas['period'].astype(str)
-            data_table = ringkas.tail(30).to_csv(index=False)
+            last_date = pd.to_datetime(df_agg['period'].iloc[-1])
+            if freq == 'D':
+                start_date = last_date + pd.Timedelta(days=1)
+            elif freq == 'W':
+                start_date = last_date + pd.Timedelta(weeks=1)
+            else:
+                start_date = (last_date + pd.DateOffset(months=1)).normalize()
+            future_dates = pd.date_range(start=start_date, periods=forecast_periods, freq=freq)
 
+            if method == "Moving Average":
+                window = min(5, len(df_agg))
+                avg = df_agg[metric_column].rolling(window=window).mean().iloc[-1]
+                predictions = [avg]*forecast_periods
+                note = f"Moving average {window}-periode terakhir."
+            else:
+                # Linear regression time series (period to int)
+                df_agg_reset = df_agg.copy()
+                df_agg_reset = df_agg_reset.reset_index(drop=True)
+                df_agg_reset['t'] = np.arange(len(df_agg_reset))
+                X = df_agg_reset['t'].values.reshape(-1,1)
+                y = df_agg_reset[metric_column].values
+                lr = LinearRegression()
+                lr.fit(X, y)
+                future_X = np.arange(len(df_agg_reset), len(df_agg_reset)+forecast_periods).reshape(-1,1)
+                predictions = lr.predict(future_X)
+                note = "Linear Regression pada urutan waktu."
+
+            pred_df = pd.DataFrame({
+                'periode_prediksi': future_dates,
+                'nilai_prediksi': predictions
+            })
+
+            st.info(f"Prediksi ({method}): {note}")
+            st.dataframe(pred_df, use_container_width=True)
+            # Gabung untuk visualisasi
+            chart_df = pd.concat([
+                pd.DataFrame({'periode': df_agg['period'], 'nilai': df_agg[metric_column], 'tipe': 'Historis'}),
+                pd.DataFrame({'periode': pred_df['periode_prediksi'], 'nilai': pred_df['nilai_prediksi'], 'tipe': 'Prediksi'})
+            ])
+            fig_forecast = px.line(
+                chart_df,
+                x='periode',
+                y='nilai',
+                color='tipe',
+                markers=True,
+                title=f"Forecasting {metric_column} ({method})"
+            )
+            st.plotly_chart(fig_forecast, use_container_width=True)
+
+            # AI hanya untuk strategi, bukan prediksi numerik
+            st.subheader("💡 Rekomendasi Strategi oleh AI")
             prompt = f"""
-Data berikut adalah tren '{metric_column}' dari dataset media.
-Kolom 'period' = tanggal, '{metric_column}' = nilainya.
+Berdasarkan data historis (dan hasil prediksi {method} pada grafik di atas), 
+berikan saran maksimal 5 poin strategi manajemen dan distribusi konten media, berbasis tren {metric_column} ke depan. 
+Jawab hanya dalam bullet point.
+"""
+            rekomendasi = gemini_engine.ask(prompt, df_agg)
+            import re
+            rekomendasi_clean = re.sub(r'```[\s\S]+?```', '', rekomendasi)
+            st.markdown(rekomendasi_clean)
 
-Tampilkan prediksi {forecast_periods} periode ke depan ({time_window.lower()}):
-- Jawab HANYA dalam bentuk tabel markdown tanpa kode python, tanpa narasi tambahan.
-- Kolom tabel: periode_prediksi, nilai_prediksi.
-- Periode awal prediksi = setelah data terakhir berikut:
-
+        except Exception as e:
+            st.error(f"⚠️ Terjadi kesalahan dalam analisis: {str(e)}")
+            logger.exception("Forecasting error")
