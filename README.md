@@ -108,7 +108,13 @@ Try the dashboard instantly:
   *HTML and CSS are used inline through* `st.markdown(..., unsafe_allow_html=True)` *for custom dashboard styling.*
 
 ---
+## 🖥️ Deployment
 
+This project is deployed on a **VPS (Virtual Private Server) running Linux Ubuntu** using **Docker** for containerization and process management.  
+All services (Streamlit app, database, and supporting libraries) are orchestrated via Docker Compose, ensuring robust, isolated, and reproducible deployments.  
+You can easily adapt the setup for your own VPS or cloud server that supports Docker.
+
+---
 ## 📁 Project Structure
 
 ```
@@ -127,7 +133,8 @@ Try the dashboard instantly:
 ├── requirements.txt        # Python dependencies
 ├── Dockerfile              # Container build (Python + Streamlit)
 ├── .devcontainer/          # VS Code Devcontainer setup (optional)
-├── data/                   # Data upload/output folder (gitignore)
+├── data/                   
+│   ├── sample_news.csv
 └── .gitignore              # Files/folders to ignore in git
 ```
 
