@@ -8,12 +8,12 @@ def show(tab):
             .about-header {
                 text-align: center;
                 padding: 1.5rem 0;
-                border-bottom: 2px solid #1e3a8a;
+                border-bottom: 2px solid #1a3c6e;
                 margin-bottom: 2rem;
             }
             .about-title {
                 font-size: 2.2rem;
-                color: #1e3a8a;
+                color: #1a3c6e;
                 margin-bottom: 0.5rem;
             }
             .about-subtitle {
@@ -38,7 +38,7 @@ def show(tab):
             .card-title {
                 font-size: 1.5rem;
                 font-weight: 600;
-                color: #1e3a8a;
+                color: #1a3c6e;
                 margin-bottom: 1.2rem;
                 display: flex;
                 align-items: center;
@@ -59,7 +59,7 @@ def show(tab):
             }
             .feature-card:hover {
                 transform: scale(1.05);
-                box-shadow: 0 4px 10px rgba(30, 58, 138, 0.15);
+                box-shadow: 0 4px 10px rgba(26, 60, 110, 0.10);
             }
             .feature-value {
                 font-size: 2.5rem;
@@ -67,7 +67,7 @@ def show(tab):
             }
             .feature-label {
                 font-weight: 500;
-                color: #1e3a8a;
+                color: #1a3c6e;
             }
             .tech-tag-container {
                 display: flex;
@@ -87,7 +87,7 @@ def show(tab):
             }
             .tech-tag:hover {
                 transform: translateY(-2px);
-                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                box-shadow: 0 4px 8px rgba(0,0,0,0.10);
                 background: #bae6fd;
             }
             .team-grid {
@@ -106,7 +106,7 @@ def show(tab):
             .team-member h4 {
                 margin-top: 0;
                 margin-bottom: 0.5rem;
-                color: #1e3a8a;
+                color: #1a3c6e;
             }
             .team-member p {
                 color: #4b5563;
@@ -132,7 +132,7 @@ def show(tab):
             }
             .platform-overview li:before {
                 content: "•";
-                color: #1e3a8a;
+                color: #1a3c6e;
                 font-weight: bold;
                 display: inline-block; 
                 width: 1em;
@@ -140,21 +140,20 @@ def show(tab):
             }
         </style>
         """, unsafe_allow_html=True)
-        
-        # Header section
+
+        # Header
         st.markdown("""
         <div class="about-header">
             <div class="about-title">ℹ️ About ProMedia Insight</div>
             <div class="about-subtitle">Platform analitik media profesional untuk membantu organisasi memahami performa konten media dan sentimen publik</div>
         </div>
         """, unsafe_allow_html=True)
-        
-        # Platform Overview - PERBAIKAN DI SINI
+
+        # Platform Overview
         st.markdown("""
         <div class="about-card platform-overview">
             <div class="card-title">📊 Platform Overview</div>
             <p><strong>ProMedia Insight Hub</strong> adalah platform analitik media profesional yang dirancang untuk membantu organisasi:</p>
-            
             <ul>
                 <li>Menganalisis performa konten media</li>
                 <li>Memahami sentimen publik</li>
@@ -164,7 +163,7 @@ def show(tab):
             </ul>
         </div>
         """, unsafe_allow_html=True)
-        
+
         # Key Features
         st.markdown("""
         <div class="about-card">
@@ -193,13 +192,12 @@ def show(tab):
             </div>
         </div>
         """, unsafe_allow_html=True)
-        
-        # Technology Stack - PERBAIKAN DI SINI
+
+        # Technology Stack
         st.markdown("""
         <div class="about-card">
             <div class="card-title">🛠️ Technology Stack</div>
             <p>Aplikasi ini dibangun dengan teknologi terkini:</p>
-            
             <div class="tech-tag-container">
                 <span class="tech-tag">Python</span>
                 <span class="tech-tag">Streamlit</span>
@@ -212,13 +210,12 @@ def show(tab):
             </div>
         </div>
         """, unsafe_allow_html=True)
-        
+
         # Development Team
         st.markdown("""
         <div class="about-card">
             <div class="card-title">👨‍💻 Development Team</div>
             <p>Platform ini dikembangkan oleh tim profesional:</p>
-            
             <div class="team-grid">
                 <div class="team-member">
                     <h4>John Doe</h4>
@@ -237,7 +234,6 @@ def show(tab):
                 </div>
             </div>
         </div>
-        
         <div class="footer">
             <p>© 2024 ProMedia Insight Hub. Hak Cipta Dilindungi.</p>
             <p style="margin-top: 0.5rem;">Versi 2.0 | <a href="#" style="color: #3b82f6; text-decoration: none;">Kebijakan Privasi</a> | <a href="#" style="color: #3b82f6; text-decoration: none;">Syarat Penggunaan</a></p>
