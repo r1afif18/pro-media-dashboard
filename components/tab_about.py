@@ -154,7 +154,6 @@ def show(tab):
             <div class="tech-tag-container">
                 <span class="tech-tag">google-generativeai</span>
                 <span class="tech-tag">textblob</span>
-                <span class="tech-tag">OpenAI API</span>
                 <span class="tech-tag">NLP</span>
                 <span class="tech-tag">Machine Learning</span>
             </div>
