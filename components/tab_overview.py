@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import utils
-from gemini_engine import gemini_engine
 
 def show(tab):
     with tab:
@@ -26,40 +25,20 @@ def show(tab):
         df = st.session_state.df.copy()
         profile = st.session_state.get('data_profile', utils.generate_data_profile(df))
 
-        # ==== Filter Section ====
-        st.markdown("""
-        <div class="section">
-            <h3 class="section-title">🔎 Quick Filter</h3>
-        </div>
-        """, unsafe_allow_html=True)
-        with st.expander("Filter Data", expanded=False):
-            col1, col2 = st.columns(2)
-            with col1:
-                start_date = st.date_input("Dari Tanggal", df['date'].min().date() if 'date' in df else None)
-            with col2:
-                end_date = st.date_input("Sampai Tanggal", df['date'].max().date() if 'date' in df else None)
-            if 'source' in df.columns:
-                sources = st.multiselect("Filter Sumber", options=df['source'].unique())
-                if sources:
-                    df = df[df['source'].isin(sources)]
-            # Apply date filter
-            if 'date' in df.columns:
-                df = df[(df['date'].dt.date >= start_date) & (df['date'].dt.date <= end_date)]
-        
-        # ==== SMART METRIC CARDS ====
+        # ==== Key Metrics with Soft Background ====
         st.markdown("""
         <div class="section">
             <h3 class="section-title">📈 Key Metrics</h3>
-            <div class="metric-grid">
+            <div class="metric-grid" style="margin-top:1.3rem;">
         """, unsafe_allow_html=True)
         col1, col2, col3, col4 = st.columns(4)
         with col1:
             growth = (df.shape[0] - profile.get('n_news_prev', 0)) / (profile.get('n_news_prev', 1) or 1) * 100
             st.markdown(f"""
-            <div class="metric-card" style="border-left:5px solid #1a3c6e;">
+            <div class="metric-card" style="background:#f4f6fb;border-left:5px solid #1a3c6e;box-shadow:0 4px 18px 0 #e2e8f0;">
                 <div class="metric-value">{len(df)}</div>
                 <div class="metric-label">Total Berita</div>
-                <div class="metric-insight" style="color:#5eba7d; font-size:13px;">
+                <div class="metric-insight" style="color:#43aa8b; font-size:13px;">
                     {'↑' if growth>=0 else '↓'} {abs(growth):.1f}% dibanding periode sebelumnya
                 </div>
             </div>
@@ -67,7 +46,7 @@ def show(tab):
         with col2:
             total_source = df['source'].nunique() if 'source' in df.columns else "N/A"
             st.markdown(f"""
-            <div class="metric-card" style="border-left:5px solid #4a6fa5;">
+            <div class="metric-card" style="background:#f4f6fb;border-left:5px solid #4a6fa5;box-shadow:0 4px 18px 0 #e2e8f0;">
                 <div class="metric-value">{total_source}</div>
                 <div class="metric-label">Sumber Berita</div>
             </div>
@@ -80,7 +59,7 @@ def show(tab):
             else:
                 date_range = "N/A"
             st.markdown(f"""
-            <div class="metric-card" style="border-left:5px solid #d4a76a;">
+            <div class="metric-card" style="background:#f4f6fb;border-left:5px solid #d4a76a;box-shadow:0 4px 18px 0 #e2e8f0;">
                 <div class="metric-value">{date_range}</div>
                 <div class="metric-label">Rentang Tanggal</div>
             </div>
@@ -94,17 +73,17 @@ def show(tab):
                 dominant_sentiment = "N/A"
                 color = "#888"
             st.markdown(f"""
-            <div class="metric-card" style="border-left:5px solid {color};">
+            <div class="metric-card" style="background:#f4f6fb;border-left:5px solid {color};box-shadow:0 4px 18px 0 #e2e8f0;">
                 <div class="metric-value">{dominant_sentiment}</div>
                 <div class="metric-label">Sentimen Dominan</div>
             </div>
             """, unsafe_allow_html=True)
         st.markdown("</div></div>", unsafe_allow_html=True)
 
-        # ==== MINI INSIGHT SECTION ====
+        # ==== Hari Teraktif Card ====
         st.markdown("""
         <div class="section" style="margin-top:2rem;">
-            <div class="card" style="background:#f0f7fa;">
+            <div class="card" style="background:#f3f7fa;border-left:5px solid #43aa8b;">
                 <b>🔥 Hari Teraktif:</b>
         """, unsafe_allow_html=True)
         if 'date' in df.columns:
@@ -112,12 +91,12 @@ def show(tab):
             count_busiest = df['date'].dt.date.value_counts().max()
             st.markdown(f"""<span style="font-size:1.1rem;">{busiest_day} — {count_busiest} berita</span>""", unsafe_allow_html=True)
         st.markdown("</div></div>", unsafe_allow_html=True)
-        
-        # ==== NEWS TREND ====
+
+        # ==== News Trend Card ====
         st.markdown("""
         <div class="section">
             <h3 class="section-title">📈 News Trend</h3>
-            <div class="card">
+            <div class="card" style="background:#f5f7fa;">
                 <div class="card-title">Trend Analysis</div>
         """, unsafe_allow_html=True)
         if 'date' in df.columns:
@@ -129,12 +108,13 @@ def show(tab):
                     x='date_only', 
                     y='count',
                     title='',
-                    labels={'date_only': 'Date', 'count': 'News Count'}
+                    labels={'date_only': 'Date', 'count': 'News Count'},
+                    template='simple_white'
                 )
                 fig.update_traces(mode='lines+markers')
                 fig.update_layout(
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    paper_bgcolor='rgba(0,0,0,0)',
+                    plot_bgcolor='#f4f6fb',
+                    paper_bgcolor='#f4f6fb',
                     xaxis=dict(showgrid=False),
                     yaxis=dict(showgrid=True, gridcolor='#f0f0f0')
                 )
@@ -145,11 +125,11 @@ def show(tab):
             st.info("Date column not available for trend analysis")
         st.markdown("</div></div>", unsafe_allow_html=True)
 
-        # ==== SENTIMENT PIE ====
+        # ==== Sentiment Pie Card ====
         st.markdown("""
         <div class="section">
             <h3 class="section-title">😊 Sentiment Analysis</h3>
-            <div class="card">
+            <div class="card" style="background:#f5f7fa;">
                 <div class="card-title">Sentiment Distribution</div>
         """, unsafe_allow_html=True)
         if 'sentiment' in df.columns:
@@ -162,7 +142,7 @@ def show(tab):
                     values='count',
                     title='',
                     hole=0.35,
-                    color_discrete_sequence=px.colors.sequential.Blues
+                    color_discrete_sequence=["#dae6f6", "#c9d8ee", "#b1cbe3"]
                 )
                 fig2.update_traces(textposition='inside', textinfo='percent+label')
                 st.plotly_chart(fig2, use_container_width=True)
@@ -172,11 +152,11 @@ def show(tab):
             st.info("Sentiment column not available")
         st.markdown("</div></div>", unsafe_allow_html=True)
 
-        # ==== TOP SOURCES WITH CHIPS ====
+        # ==== Top Sources Card ====
         st.markdown("""
         <div class="section">
             <h3 class="section-title">📰 News Sources</h3>
-            <div class="card">
+            <div class="card" style="background:#f5f7fa;">
                 <div class="card-title">Top News Sources</div>
         """, unsafe_allow_html=True)
         if 'source' in df.columns:
@@ -196,7 +176,12 @@ def show(tab):
                     y='count',
                     title='',
                     labels={'source': 'Source', 'count': 'Count'},
-                    color='count'
+                    color='count',
+                    color_continuous_scale=["#34618c", "#a3c9e2"]
+                )
+                fig3.update_layout(
+                    plot_bgcolor='#f5f7fa',
+                    paper_bgcolor='#f5f7fa'
                 )
                 st.plotly_chart(fig3, use_container_width=True)
             else:
@@ -204,23 +189,3 @@ def show(tab):
         else:
             st.info("Source column not available")
         st.markdown("</div></div>", unsafe_allow_html=True)
-
-        # ==== AI INSIGHT ====
-        st.markdown("""
-        <div class="section">
-            <h3 class="section-title">🤖 AI Insight</h3>
-        </div>
-        """, unsafe_allow_html=True)
-        if st.button("🔍 Dapatkan Insight AI", use_container_width=True):
-            with st.spinner("Meminta insight AI..."):
-                try:
-                    prompt = "Buatkan insight utama dan pola menarik dari data tren dan distribusi berita berikut. Singkat, 3-5 poin, bahasa Indonesia, fokus pada insight actionable."
-                    ai_insight = gemini_engine.ask(prompt, df)
-                    st.markdown(f"""
-                    <div class="card" style="background:#e9f4ee;">
-                        <div class="card-title">Hasil Insight AI</div>
-                        <div style="font-size:1.1rem;">{ai_insight}</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                except Exception as e:
-                    st.error(f"AI insight gagal: {e}")
