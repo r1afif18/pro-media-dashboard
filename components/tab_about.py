@@ -184,7 +184,7 @@ def show(tab):
                 <div class="dev-name">Rafif Sudanta</div>
                 <div class="dev-links">
                     <a class="dev-link" href="https://github.com/r1afif18/pro-media-dashboard" target="_blank">GitHub Repo</a>
-                    <a class="dev-link" href="https://www.linkedin.com/in/rafifsudanta/" target="_blank">LinkedIn</a>
+                    <a class="dev-link" href="https://www.linkedin.com/in/rafif-sudanta/" target="_blank">LinkedIn</a>
                 </div>
                 <a class="dev-email" href="mailto:rafifsudanta1@gmail.com">📧 rafifsudanta1@gmail.com</a>
             </div>
@@ -197,7 +197,7 @@ def show(tab):
         # ===== FOOTER =====
         st.markdown("""
         <div class="footer">
-            <p>© 2024 ProMedia Insight Hub. Developed by Rafif Sudanta.</p>
-            <p style="margin-top: 0.5rem;">Versi 2.0 | <a href="https://github.com/r1afif18/pro-media-dashboard" style="color: #3b82f6; text-decoration: none;" target="_blank">GitHub Repo</a> | <a href="https://www.linkedin.com/in/rafifsudanta/" style="color: #3b82f6; text-decoration: none;" target="_blank">LinkedIn</a></p>
+            <p>© 2025 ProMedia Insight Hub. Developed by Rafif Sudanta.</p>
+            <p style="margin-top: 0.5rem;">Versi 2.0 | <a href="https://github.com/r1afif18/pro-media-dashboard" style="color: #3b82f6; text-decoration: none;" target="_blank">GitHub Repo</a> | <a href="https://www.linkedin.com/in/rafif-sudanta/" style="color: #3b82f6; text-decoration: none;" target="_blank">LinkedIn</a></p>
         </div>
         """, unsafe_allow_html=True)
