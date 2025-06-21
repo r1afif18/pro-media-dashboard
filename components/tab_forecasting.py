@@ -122,8 +122,6 @@ berikan nilai estimasi tiap periode dalam bentuk tabel.
                         md_table = result
 
                     try:
-                        import pandas as pd
-                        df_pred = pd.read_csv(io.StringIO(md_table.replace('|', ',')), header=1)
                         st.dataframe(df_pred, use_container_width=True)
                         # Plot proyeksi AI
                         if 'periode_prediksi' in df_pred.columns and 'nilai_prediksi' in df_pred.columns:
