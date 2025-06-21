@@ -167,7 +167,7 @@ You can easily adapt the setup for your own VPS or cloud server that supports Do
 
 ## 🖼️ Dashboard Screenshots
 
-> _Add one or two screenshots of your dashboard here for a better GitHub presentation!_
+> 
 >
 > ![dashboard-overview](1.png)
 > ![dashboard-upload](2.png)
