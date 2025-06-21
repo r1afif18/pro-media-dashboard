@@ -24,76 +24,21 @@ def show(tab):
         df = st.session_state.df.copy()
         profile = st.session_state.get('data_profile', utils.generate_data_profile(df))
 
-        # ==== KEY METRICS CARD FLEX GRID ====
+        # ==== KEY METRICS ====
         st.markdown("""
         <div class="section" style="margin-bottom: 1.5rem;">
             <h3 class="section-title">📈 Key Metrics</h3>
         </div>
-        <div style="display:flex;flex-wrap:wrap;gap:24px 14px;align-items:stretch;margin-bottom:30px;">
         """, unsafe_allow_html=True)
 
         growth = (df.shape[0] - profile.get('n_news_prev', 0)) / (profile.get('n_news_prev', 1) or 1) * 100
-        st.markdown(f"""
-        <div class="metric-card" style="
-            background: #eef2fa;
-            border-left:5px solid #1a3c6e;
-            box-shadow:0 8px 24px 0 #d1dbec3d;
-            border-radius: 16px;
-            min-width: 180px;
-            max-width: 220px;
-            padding: 1.45rem 1.1rem 1.25rem 1.25rem;
-            margin-bottom: 0.7rem;
-            display: flex; flex-direction:column; justify-content:center;
-        ">
-            <div class="metric-value" style="font-size:2.15rem;font-weight:700;">{len(df)}</div>
-            <div class="metric-label" style="font-size:1.02rem;">Total Berita</div>
-            <div class="metric-insight" style="color:#43aa8b; font-size:13px;margin-top:5px;">
-                {'↑' if growth>=0 else '↓'} {abs(growth):.1f}% dibanding periode sebelumnya
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
         total_source = df['source'].nunique() if 'source' in df.columns else "N/A"
-        st.markdown(f"""
-        <div class="metric-card" style="
-            background: #eef2fa;
-            border-left:5px solid #4a6fa5;
-            box-shadow:0 8px 24px 0 #d1dbec3d;
-            border-radius: 16px;
-            min-width: 180px;
-            max-width: 220px;
-            padding: 1.45rem 1.1rem 1.25rem 1.25rem;
-            margin-bottom: 0.7rem;
-            display: flex; flex-direction:column; justify-content:center;
-        ">
-            <div class="metric-value" style="font-size:2.15rem;font-weight:700;">{total_source}</div>
-            <div class="metric-label" style="font-size:1.02rem;">Sumber Berita</div>
-        </div>
-        """, unsafe_allow_html=True)
-
         if 'date' in df.columns:
             min_date = df['date'].min().strftime('%d %b %Y')
             max_date = df['date'].max().strftime('%d %b %Y')
             date_range = f"{min_date} - {max_date}"
         else:
             date_range = "N/A"
-        st.markdown(f"""
-        <div class="metric-card" style="
-            background: #eef2fa;
-            border-left:5px solid #d4a76a;
-            box-shadow:0 8px 24px 0 #d1dbec3d;
-            border-radius: 16px;
-            min-width: 180px;
-            max-width: 220px;
-            padding: 1.45rem 1.1rem 1.25rem 1.25rem;
-            margin-bottom: 0.7rem;
-            display: flex; flex-direction:column; justify-content:center;
-        ">
-            <div class="metric-value" style="font-size:1.11rem;font-weight:600;">{date_range}</div>
-            <div class="metric-label" style="font-size:1.02rem;">Rentang Tanggal</div>
-        </div>
-        """, unsafe_allow_html=True)
-
         if 'sentiment' in df.columns:
             sentiment_counts = df['sentiment'].value_counts()
             dominant_sentiment = sentiment_counts.idxmax()
@@ -101,23 +46,71 @@ def show(tab):
         else:
             dominant_sentiment = "N/A"
             color = "#e74c3c"
-        st.markdown(f"""
-        <div class="metric-card" style="
-            background: #eef2fa;
-            border-left:5px solid {color};
-            box-shadow:0 8px 24px 0 #d1dbec3d;
-            border-radius: 16px;
-            min-width: 180px;
-            max-width: 220px;
-            padding: 1.45rem 1.1rem 1.25rem 1.25rem;
-            margin-bottom: 0.7rem;
-            display: flex; flex-direction:column; justify-content:center;
-        ">
-            <div class="metric-value" style="font-size:2rem;font-weight:600;">{dominant_sentiment}</div>
-            <div class="metric-label" style="font-size:1.02rem;">Sentimen Dominan</div>
-        </div>
-        """, unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True) # tutup grid
+
+        col1, col2, col3, col4 = st.columns(4)
+
+        with col1:
+            st.markdown(f"""
+            <div style="
+                background: #eef2fa;
+                border-left:5px solid #1a3c6e;
+                box-shadow:0 6px 20px 0 #d1dbec3d;
+                border-radius: 16px;
+                width:100%;
+                padding: 1.3rem 1.1rem 1.1rem 1.2rem;
+                margin-bottom: 0.7rem;">
+                <div style="font-size:2.15rem;font-weight:700;">{len(df)}</div>
+                <div style="font-size:1.02rem;">Total Berita</div>
+                <div style="color:#43aa8b; font-size:13px; margin-top:5px;">
+                    {'↑' if growth>=0 else '↓'} {abs(growth):.1f}% dibanding periode sebelumnya
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with col2:
+            st.markdown(f"""
+            <div style="
+                background: #eef2fa;
+                border-left:5px solid #4a6fa5;
+                box-shadow:0 6px 20px 0 #d1dbec3d;
+                border-radius: 16px;
+                width:100%;
+                padding: 1.3rem 1.1rem 1.1rem 1.2rem;
+                margin-bottom: 0.7rem;">
+                <div style="font-size:2.15rem;font-weight:700;">{total_source}</div>
+                <div style="font-size:1.02rem;">Sumber Berita</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with col3:
+            st.markdown(f"""
+            <div style="
+                background: #eef2fa;
+                border-left:5px solid #d4a76a;
+                box-shadow:0 6px 20px 0 #d1dbec3d;
+                border-radius: 16px;
+                width:100%;
+                padding: 1.3rem 1.1rem 1.1rem 1.2rem;
+                margin-bottom: 0.7rem;">
+                <div style="font-size:1.11rem;font-weight:600;">{date_range}</div>
+                <div style="font-size:1.02rem;">Rentang Tanggal</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with col4:
+            st.markdown(f"""
+            <div style="
+                background: #eef2fa;
+                border-left:5px solid {color};
+                box-shadow:0 6px 20px 0 #d1dbec3d;
+                border-radius: 16px;
+                width:100%;
+                padding: 1.3rem 1.1rem 1.1rem 1.2rem;
+                margin-bottom: 0.7rem;">
+                <div style="font-size:2rem;font-weight:600;">{dominant_sentiment}</div>
+                <div style="font-size:1.02rem;">Sentimen Dominan</div>
+            </div>
+            """, unsafe_allow_html=True)
 
         # ==== HARI TERAKTIF CARD ====
         st.markdown("""
