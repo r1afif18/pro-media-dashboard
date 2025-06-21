@@ -94,9 +94,16 @@ def get_ai_history(limit=20):
             })
         return history
 
-def delete_ai_history(history_id):
-    """Delete AI history"""
+def delete_ai_history(history_id=None, all_history=False):
+    """
+    Delete AI history.
+    - If all_history=True, delete all AI Lab history.
+    - If history_id is given, delete only that record.
+    """
     with sqlite3.connect(DB_PATH) as conn:
         c = conn.cursor()
-        c.execute("DELETE FROM ai_history WHERE id=?", (history_id,))
+        if all_history:
+            c.execute("DELETE FROM ai_history")
+        elif history_id is not None:
+            c.execute("DELETE FROM ai_history WHERE id=?", (history_id,))
         conn.commit()
