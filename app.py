@@ -198,7 +198,7 @@ else:
 
     # Create main tabs
     tabs = st.tabs([
-        "📊 Overview", "📤 Upload Data", "🧠 AI Lab", "💡 Insights", "ℹ️ About"
+        "📊 Overview", "📤 Upload Data", "🧠 AI Lab", "💡 Insights",  "🔮 Forecasting", "ℹ️ About"
     ])
     
     # Display tab content with global error handling
@@ -207,4 +207,5 @@ else:
         show_upload(tabs[1])
         show_ai_lab(tabs[2])
         show_insights(tabs[3])
-        show_about(tabs[4])
+        show_forecasting(tabs[4])
+        show_about(tabs[5])
